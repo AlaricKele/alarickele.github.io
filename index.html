@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>白墨画 - 留白之美，墨韵之境</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ink: '#1a1a1a',
+                        paper: '#f8f8f5',
+                        accent: '#c9a96e',
+                        light: '#e8e8e3',
+                        dark: '#2d2d2d'
+                    },
+                    fontFamily: {
+                        serif: ['Noto Serif SC', 'serif'],
+                        sans: ['Noto Sans SC', 'sans-serif']
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow {
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            }
+            .ink-gradient {
+                background: linear-gradient(135deg, #1a1a1a 0%, #3d3d3d 100%);
+            }
+            .paper-texture {
+                background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+            }
+            .brush-stroke {
+                position: relative;
+            }
+            .brush-stroke::after {
+                content: '';
+                position: absolute;
+                bottom: -8px;
+                left: 0;
+                width: 100%;
+                height: 3px;
+                background: linear-gradient(90deg, #c9a96e 0%, transparent 100%);
+                transform: scaleX(0);
+                transform-origin: left;
+                transition: transform 0.6s ease;
+            }
+            .brush-stroke:hover::after {
+                transform: scaleX(1);
+            }
+            .fade-in {
+                opacity: 0;
+                transform: translateY(30px);
+                transition: opacity 0.8s ease, transform 0.8s ease;
+            }
+            .fade-in.visible {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            .parallax {
+                transition: transform 0.2s ease-out;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-paper paper-texture font-sans text-ink overflow-x-hidden">
+    <!-- 导航栏 -->
+    <nav id="navbar" class="fixed top-0 left-0 w-full z-50 transition-all duration-500 bg-transparent">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="#" class="text-2xl font-serif font-bold text-white text-shadow">白墨画</a>
+            <div class="hidden md:flex space-x-8">
+                <a href="#about" class="text-white hover:text-accent transition-colors duration-300">关于白墨</a>
+                <a href="#features" class="text-white hover:text-accent transition-colors duration-300">艺术特点</a>
+                <a href="#techniques" class="text-white hover:text-accent transition-colors duration-300">技法解析</a>
+                <a href="#gallery" class="text-white hover:text-accent transition-colors duration-300">经典作品</a>
+                <a href="#artists" class="text-white hover:text-accent transition-colors duration-300">名家风采</a>
+            </div>
+            <button id="menu-toggle" class="md:hidden text-white text-2xl">
+                <i class="fa fa-bars"></i>
+            </button>
+        </div>
+        <!-- 移动端菜单 -->
+        <div id="mobile-menu" class="md:hidden hidden bg-ink/95 backdrop-blur-md">
+            <div class="container mx-auto px-6 py-4 flex flex-col space-y-4">
+                <a href="#about" class="text-white hover:text-accent transition-colors duration-300 py-2">关于白墨</a>
+                <a href="#features" class="text-white hover:text-accent transition-colors duration-300 py-2">艺术特点</a>
+                <a href="#techniques" class="text-white hover:text-accent transition-colors duration-300 py-2">技法解析</a>
+                <a href="#gallery" class="text-white hover:text-accent transition-colors duration-300 py-2">经典作品</a>
+                <a href="#artists" class="text-white hover:text-accent transition-colors duration-300 py-2">名家风采</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 英雄区 -->
+    <section class="relative h-screen flex items-center justify-center overflow-hidden">
+        <div class="absolute inset-0 z-0">
+            <img src="https://picsum.photos/id/1024/1920/1080" alt="白墨画背景" class="w-full h-full object-cover brightness-50">
+            <div class="absolute inset-0 bg-gradient-to-b from-ink/70 to-ink/90"></div>
+        </div>
+        <div class="container mx-auto px-6 z-10 text-center">
+            <h1 class="text-[clamp(3rem,10vw,6rem)] font-serif font-bold text-white mb-6 tracking-wider">
+                白墨画
+            </h1>
+            <p class="text-[clamp(1.2rem,3vw,1.8rem)] text-white/90 mb-12 max-w-3xl mx-auto leading-relaxed">
+                以白为墨，以虚为实<br>
+                在留白之间，窥见天地万象
+            </p>
+            <a href="#about" class="inline-block px-8 py-3 border-2 border-accent text-accent hover:bg-accent hover:text-ink transition-all duration-500 rounded-sm text-lg font-medium">
+                探索白墨之美
+            </a>
+        </div>
+        <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce">
+            <i class="fa fa-chevron-down text-white text-2xl"></i>
+        </div>
+    </section>
+
+    <!-- 关于白墨画 -->
+    <section id="about" class="py-24 bg-paper">
+        <div class="container mx-auto px-6">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-[clamp(2rem,5vw,3rem)] font-serif font-bold text-center mb-16 brush-stroke inline-block">
+                    白墨画的历史渊源
+                </h2>
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <div class="fade-in">
+                        <p class="text-lg leading-relaxed mb-6">
+                            白墨画，又称"反白画"或"留白画"，是中国传统水墨画的一种独特表现形式。它起源于唐代，兴盛于宋代，经过数百年的发展，形成了独具特色的艺术风格。
+                        </p>
+                        <p class="text-lg leading-relaxed mb-6">
+                            与传统水墨画以墨色为主不同，白墨画巧妙地利用纸张的白色作为主要表现元素，通过墨色的衬托来塑造形象。这种"计白当黑"的艺术手法，体现了中国传统哲学中"有无相生"的思想。
+                        </p>
+                        <p class="text-lg leading-relaxed">
+                            白墨画不仅是一种绘画技法，更是一种审美境界。它追求"言有尽而意无穷"的艺术效果，通过大量的留白，给观者留下无限的想象空间。
+                        </p>
+                    </div>
+                    <div class="fade-in relative">
+                        <div class="absolute -top-4 -left-4 w-full h-full border-2 border-accent/30"></div>
+                        <img src="https://picsum.photos/id/1063/600/800" alt="古代白墨画作品" class="w-full h-auto shadow-xl">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 艺术特点 -->
+    <section id="features" class="py-24 bg-ink text-white">
+        <div class="container mx-auto px-6">
+            <h2 class="text-[clamp(2rem,5vw,3rem)] font-serif font-bold text-center mb-16 brush-stroke inline-block">
+                白墨画的艺术特点
+            </h2>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="fade-in bg-dark/50 p-8 rounded-sm hover:bg-dark/80 transition-all duration-500 hover:transform hover:-translate-y-2">
+                    <div class="text-accent text-4xl mb-6">
+                        <i class="fa fa-paint-brush"></i>
+                    </div>
+                    <h3 class="text-2xl font-serif font-bold mb-4">以白为墨</h3>
+                    <p class="text-white/80 leading-relaxed">
+                        将纸张的白色作为主要的绘画元素，通过墨色的对比来突出白色的形象，创造出独特的视觉效果。
+                    </p>
+                </div>
+                <div class="fade-in bg-dark/50 p-8 rounded-sm hover:bg-dark/80 transition-all duration-500 hover:transform hover:-translate-y-2" style="transition-delay: 0.2s">
+                    <div class="text-accent text-4xl mb-6">
+                        <i class="fa fa-leaf"></i>
+                    </div>
+                    <h3 class="text-2xl font-serif font-bold mb-4">虚实相生</h3>
+                    <p class="text-white/80 leading-relaxed">
+                        运用虚实对比的手法，通过墨色的浓淡干湿来表现物体的质感和空间感，使画面富有层次感。
+                    </p>
+                </div>
+                <div class="fade-in bg-dark/50 p-8 rounded-sm hover:bg-dark/80 transition-all duration-500 hover:transform hover:-translate-y-2" style="transition-delay: 0.4s">
+                    <div class="text-accent text-4xl mb-6">
+                        <i class="fa fa-yin-yang"></i>
+                    </div>
+                    <h3 class="text-2xl font-serif font-bold mb-4">意境深远</h3>
+                    <p class="text-white/80 leading-relaxed">
+                        追求"意在笔先，画尽意在"的艺术境界，通过简洁的画面表达丰富的情感和深刻的哲理。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技法解析 -->
+    <section id="techniques" class="py-24 bg-paper">
+        <div class="container mx-auto px-6">
+            <h2 class="text-[clamp(2rem,5vw,3rem)] font-serif font-bold text-center mb-16 brush-stroke inline-block">
+                白墨画的技法解析
+            </h2>
+            <div class="grid md:grid-cols-2 gap-16 items-center">
+                <div class="fade-in order-2 md:order-1">
+                    <div class="space-y-8">
+                        <div>
+                            <h3 class="text-2xl font-serif font-bold mb-3 flex items-center">
+                                <span class="text-accent mr-3">01</span> 留白技法
+                            </h3>
+                            <p class="text-lg leading-relaxed pl-10">
+                                留白是白墨画最核心的技法。画家通过精心设计的空白区域，来表现天空、水面、云雾等自然景象，同时也给观者留下想象的空间。
+                            </p>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-serif font-bold mb-3 flex items-center">
+                                <span class="text-accent mr-3">02</span> 墨色对比
+                            </h3>
+                            <p class="text-lg leading-relaxed pl-10">
+                                运用墨色的浓淡、干湿、疏密对比，来突出白色的主体形象。墨色越浓，白色就越显得明亮纯净。
+                            </p>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-serif font-bold mb-3 flex items-center">
+                                <span class="text-accent mr-3">03</span> 线条勾勒
+                            </h3>
+                            <p class="text-lg leading-relaxed pl-10">
+                                用简洁流畅的线条勾勒出物体的轮廓，然后通过墨色的渲染来表现物体的体积和质感。
+                            </p>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-serif font-bold mb-3 flex items-center">
+                                <span class="text-accent mr-3">04</span> 意境营造
+                            </h3>
+                            <p class="text-lg leading-relaxed pl-10">
+                                通过构图、笔墨和色彩的综合运用，营造出一种特定的氛围和意境，使观者产生情感共鸣。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="fade-in order-1 md:order-2 relative">
+                    <div class="absolute -bottom-4 -right-4 w-full h-full border-2 border-accent/30"></div>
+                    <img src="https://picsum.photos/id/1059/600/800" alt="白墨画技法演示" class="w-full h-auto shadow-xl">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 经典作品画廊 -->
+    <section id="gallery" class="py-24 bg-light">
+        <div class="container mx-auto px-6">
+            <h2 class="text-[clamp(2rem,5vw,3rem)] font-serif font-bold text-center mb-16 brush-stroke inline-block">
+                经典作品欣赏
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="fade-in group relative overflow-hidden rounded-sm shadow-lg">
+                    <img src="https://picsum.photos/id/1039/600/800" alt="白墨山水" class="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110">
+                    <div class="absolute inset-0 bg-gradient-to-t from-ink/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
+                        <h3 class="text-white text-xl font-serif font-bold">云山雾绕</h3>
+                        <p class="text-white/80">宋代 · 佚名</p>
+                    </div>
+                </div>
+                <div class="fade-in group relative overflow-hidden rounded-sm shadow-lg" style="transition-delay: 0.2s">
+                    <img src="https://picsum.photos/id/1037/600/800" alt="白墨花鸟" class="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110">
+                    <div class="absolute inset-0 bg-gradient-to-t from-ink/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
+                        <h3 class="text-white text-xl font-serif font-bold">寒梅傲雪</h3>
+                        <p class="text-white/80">明代 · 王冕</p>
+                    </div>
+                </div>
+                <div class="fade-in group relative overflow-hidden rounded-sm shadow-lg" style="transition-delay: 0.4s">
+                    <img src="https://picsum.photos/id/1035/600/800" alt="白墨人物" class="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110">
+                    <div class="absolute inset-0 bg-gradient-to-t from-ink/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
+                        <h3 class="text-white text-xl font-serif font-bold">观音像</h3>
+                        <p class="text-white/80">唐代 · 吴道子</p>
+                    </div>
+                </div>
+                <div class="fade-in group relative overflow-hidden rounded-sm shadow-lg" style="transition-delay: 0.6s">
+                    <img src="https://picsum.photos/id/1033/600/800" alt="白墨竹石" class="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110">
+                    <div class="absolute inset-0 bg-gradient-to-t from-ink/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
+                        <h3 class="text-white text-xl font-serif font-bold">竹石图</h3>
+                        <p class="text-white/80">清代 · 郑板桥</p>
+                    </div>
+                </div>
+                <div class="fade-in group relative overflow-hidden rounded-sm shadow-lg" style="transition-delay: 0.8s">
+                    <img src="https://picsum.photos/id/1031/600/800" alt="白墨山水" class="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110">
+                    <div class="absolute inset-0 bg-gradient-to-t from-ink/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
+                        <h3 class="text-white text-xl font-serif font-bold">寒江独钓</h3>
+                        <p class="text-white/80">宋代 · 马远</p>
+                    </div>
+                </div>
+                <div class="fade-in group relative overflow-hidden rounded-sm shadow-lg" style="transition-delay: 1s">
+                    <img src="https://picsum.photos/id/1029/600/800" alt="白墨兰草" class="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110">
+                    <div class="absolute inset-0 bg-gradient-to-t from-ink/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
+                        <h3 class="text-white text-xl font-serif font-bold">空谷幽兰</h3>
+                        <p class="text-white/80">元代 · 郑思肖</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 名家风采 -->
+    <section id="artists" class="py-24 bg-paper">
+        <div class="container mx-auto px-6">
+            <h2 class="text-[clamp(2rem,5vw,3rem)] font-serif font-bold text-center mb-16 brush-stroke inline-block">
+                白墨画名家风采
+            </h2>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="fade-in text-center">
+                    <div class="w-40 h-40 mx-auto mb-6 rounded-full overflow-hidden border-4 border-accent/30">
+                        <img src="https://picsum.photos/id/1012/200/200" alt="吴道子" class="w-full h-full object-cover">
+                    </div>
+                    <h3 class="text-2xl font-serif font-bold mb-2">吴道子</h3>
+                    <p class="text-accent mb-4">唐代 · 画圣</p>
+                    <p class="text-lg leading-relaxed">
+                        唐代著名画家，被后世尊称为"画圣"。他擅长佛道、神鬼、人物、山水、鸟兽、草木、楼阁等，尤精于佛道、人物，长于壁画创作。
+                    </p>
+                </div>
+                <div class="fade-in text-center" style="transition-delay: 0.2s">
+                    <div class="w-40 h-40 mx-auto mb-6 rounded-full overflow-hidden border-4 border-accent/30">
+                        <img src="https://picsum.photos/id/1011/200/200" alt="马远" class="w-full h-full object-cover">
+                    </div>
+                    <h3 class="text-2xl font-serif font-bold mb-2">马远</h3>
+                    <p class="text-accent mb-4">南宋 · 马一角</p>
+                    <p class="text-lg leading-relaxed">
+                        南宋著名画家，"南宋四家"之一。他擅长山水、人物、花鸟，山水取法李唐，笔力劲利阔略，皴法硬朗，树叶常用夹叶，树干浓重，多横斜之态。
+                    </p>
+                </div>
+                <div class="fade-in text-center" style="transition-delay: 0.4s">
+                    <div class="w-40 h-40 mx-auto mb-6 rounded-full overflow-hidden border-4 border-accent/30">
+                        <img src="https://picsum.photos/id/1005/200/200" alt="郑板桥" class="w-full h-full object-cover">
+                    </div>
+                    <h3 class="text-2xl font-serif font-bold mb-2">郑板桥</h3>
+                    <p class="text-accent mb-4">清代 · 扬州八怪</p>
+                    <p class="text-lg leading-relaxed">
+                        清代著名画家、书法家，"扬州八怪"重要代表人物。他一生只画兰、竹、石，自称"四时不谢之兰，百节长青之竹，万古不败之石，千秋不变之人"。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 结语 -->
+    <section class="py-24 ink-gradient text-white">
+        <div class="container mx-auto px-6 text-center">
+            <h2 class="text-[clamp(2rem,5vw,3rem)] font-serif font-bold mb-8">
+                白墨画的永恒魅力
+            </h2>
+            <p class="text-xl leading-relaxed max-w-3xl mx-auto mb-12">
+                白墨画以其独特的艺术语言和深厚的文化内涵，在中国绘画史上占据着重要的地位。它不仅是一种绘画形式，更是一种生活态度和哲学思考。在这个喧嚣浮躁的时代，白墨画的简约、宁静和空灵，给我们带来了心灵的慰藉和精神的寄托。
+            </p>
+            <div class="text-4xl text-accent mb-8">
+                <i class="fa fa-quote-left"></i>
+            </div>
+            <p class="text-2xl font-serif italic mb-4">
+                "留白，不是空白，而是一种更高层次的充实。"
+            </p>
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="py-12 bg-ink text-white/70">
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-6 md:mb-0">
+                    <h3 class="text-2xl font-serif font-bold text-white mb-2">白墨画</h3>
+                    <p>留白之美，墨韵之境</p>
+                </div>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-white/70 hover:text-accent transition-colors duration-300 text-xl">
+                        <i class="fa fa-weibo"></i>
+                    </a>
+                    <a href="#" class="text-white/70 hover:text-accent transition-colors duration-300 text-xl">
+                        <i class="fa fa-wechat"></i>
+                    </a>
+                    <a href="#" class="text-white/70 hover:text-accent transition-colors duration-300 text-xl">
+                        <i class="fa fa-instagram"></i>
+                    </a>
+                    <a href="#" class="text-white/70 hover:text-accent transition-colors duration-300 text-xl">
+                        <i class="fa fa-pinterest"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="border-t border-white/10 mt-8 pt-8 text-center">
+                <p>&copy; 2026 白墨画艺术网. 保留所有权利.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 回到顶部按钮 -->
+    <button id="back-to-top" class="fixed bottom-8 right-8 bg-accent text-ink w-12 h-12 rounded-full flex items-center justify-center opacity-0 invisible transition-all duration-500 hover:bg-accent/80">
+        <i class="fa fa-chevron-up"></i>
+    </button>
+
+    <script>
+        // 导航栏滚动效果
+        const navbar = document.getElementById('navbar');
+        const backToTop = document.getElementById('back-to-top');
+        
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 100) {
+                navbar.classList.add('bg-ink/95', 'backdrop-blur-md', 'py-2', 'shadow-lg');
+                navbar.classList.remove('bg-transparent', 'py-4');
+                backToTop.classList.remove('opacity-0', 'invisible');
+                backToTop.classList.add('opacity-100', 'visible');
+            } else {
+                navbar.classList.remove('bg-ink/95', 'backdrop-blur-md', 'py-2', 'shadow-lg');
+                navbar.classList.add('bg-transparent', 'py-4');
+                backToTop.classList.add('opacity-0', 'invisible');
+                backToTop.classList.remove('opacity-100', 'visible');
+            }
+        });
+
+        // 移动端菜单切换
+        const menuToggle = document.getElementById('menu-toggle');
+        const mobileMenu = document.getElementById('mobile-menu');
+        
+        menuToggle.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // 平滑滚动
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                if (targetId === '#') return;
+                
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                    
+                    // 关闭移动端菜单
+                    if (!mobileMenu.classList.contains('hidden')) {
+                        mobileMenu.classList.add('hidden');
+                    }
+                }
+            });
+        });
+
+        // 回到顶部
+        backToTop.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+
+        // 滚动动画
+        const fadeElements = document.querySelectorAll('.fade-in');
+        
+        const fadeInOnScroll = () => {
+            fadeElements.forEach(element => {
+                const elementTop = element.getBoundingClientRect().top;
+                const windowHeight = window.innerHeight;
+                
+                if (elementTop < windowHeight * 0.85) {
+                    element.classList.add('visible');
+                }
+            });
+        };
+        
+        // 初始检查
+        fadeInOnScroll();
+        
+        // 滚动时检查
+        window.addEventListener('scroll', fadeInOnScroll);
+
+        // 视差效果
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const parallaxElements = document.querySelectorAll('.parallax');
+            
+            parallaxElements.forEach(element => {
+                const speed = element.getAttribute('data-speed') || 0.5;
+                element.style.transform = `translateY(${scrolled * speed}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
