@@ -155,6 +155,54 @@
             color: #555;
         }
 
+        /* Python 运行区域 */
+        .python-box {
+            margin-top: 60px;
+            padding-top: 30px;
+            border-top: 1px solid #eee;
+        }
+        .python-box h3 {
+            font-size: 22px;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+        .btn-group {
+            margin: 10px 0;
+            display: flex;
+            gap: 15px;
+        }
+        textarea {
+            width: 100%;
+            height: 180px;
+            padding: 12px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: none;
+            font-family: Consolas, monospace;
+        }
+        .run-btn, .load-btn {
+            padding: 8px 24px;
+            background: #222;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+        .run-btn:hover, .load-btn:hover {
+            background: #444;
+        }
+        #output {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f8f8;
+            border: 1px solid #eee;
+            min-height: 60px;
+            font-family: Consolas, monospace;
+            white-space: pre-wrap;
+        }
+
         /* 底部 */
         footer {
             text-align: center;
@@ -186,6 +234,8 @@
                 <a href="#feature" class="en">Features</a>
                 <a href="#culture" class="zh">文化传承</a>
                 <a href="#culture" class="en">Culture</a>
+                <a href="#python" class="zh">代码运行</a>
+                <a href="#python" class="en">Code Run</a>
             </div>
             <button class="lang-btn" id="langSwitch">English</button>
         </div>
@@ -201,7 +251,7 @@
                 <li><a href="#intro" class="zh">作品赏析</a><a href="#intro" class="en">Appreciation</a></li>
                 <li><a href="#feature" class="zh">笔墨技法</a><a href="#feature" class="en">Skills</a></li>
                 <li><a href="#culture" class="zh">历史渊源</a><a href="#culture" class="en">History</a></li>
-                <li><a href="#" class="zh">名家作品</a><a href="#" class="en">Masters</a></li>
+                <li><a href="#python" class="zh">Python运行</a><a href="#python" class="en">Python Run</a></li>
                 <li><a href="#" class="zh">联系我们</a><a href="#" class="en">Contact</a></li>
             </ul>
         </aside>
@@ -263,6 +313,24 @@
                     </div>
                 </div>
             </section>
+
+            <!-- Python 在线运行区域 -->
+            <section id="python" class="python-box">
+                <h3 class="zh">Python 代码在线运行</h3>
+                <h3 class="en">Online Python Runner</h3>
+                <div class="btn-group">
+                    <button class="load-btn" onclick="loadLocalPy()">
+                        <span class="zh">加载仓库 main.py</span>
+                        <span class="en">Load main.py</span>
+                    </button>
+                    <button class="run-btn" onclick="runPython()">
+                        <span class="zh">运行代码</span>
+                        <span class="en">Run Code</span>
+                    </button>
+                </div>
+                <textarea id="codeArea" placeholder="手动编写代码，或点击上方按钮加载仓库内的Python文件..."></textarea>
+                <div id="output"></div>
+            </section>
         </main>
     </div>
 
@@ -272,8 +340,10 @@
         <p class="en">© 2026 White Ink Art Website All Rights Reserved</p>
     </footer>
 
-    <!-- 双语切换脚本 -->
+    <!-- 浏览器Python环境 -->
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
     <script>
+        // 双语切换
         const btn = document.getElementById('langSwitch');
         const zhList = document.querySelectorAll('.zh');
         const enList = document.querySelectorAll('.en');
@@ -281,14 +351,12 @@
 
         btn.addEventListener('click', function(){
             if(isChinese){
-                // 切换英文
                 zhList.forEach(item => item.style.display = 'none');
                 enList.forEach(item => item.style.display = 'inline');
                 document.documentElement.lang = 'en';
                 btn.innerText = '中文';
                 isChinese = false;
             }else{
-                // 切换中文
                 zhList.forEach(item => item.style.display = 'inline');
                 enList.forEach(item => item.style.display = 'none');
                 document.documentElement.lang = 'zh-CN';
@@ -296,6 +364,43 @@
                 isChinese = true;
             }
         })
+
+        // 初始化Pyodide
+        let pyodide;
+        async function initPy() {
+            pyodide = await loadPyodide();
+        }
+        initPy();
+
+        // 读取仓库内的 main.py 文件，载入编辑框
+        async function loadLocalPy() {
+            const codeArea = document.getElementById('codeArea');
+            const out = document.getElementById('output');
+            out.innerText = "";
+            try {
+                // 读取同目录下 main.py
+                const res = await fetch("main.py");
+                if (!res.ok) throw new Error("文件读取失败");
+                const pyCode = await res.text();
+                codeArea.value = pyCode;
+                out.innerText = "✅ 已成功加载 main.py";
+            } catch (err) {
+                out.innerText = "❌ 加载失败：" + err.message;
+            }
+        }
+
+        // 执行代码
+        async function runPython() {
+            const code = document.getElementById('codeArea').value;
+            const out = document.getElementById('output');
+            out.innerText = "";
+            try {
+                const result = await pyodide.runPythonAsync(code);
+                out.innerText = result ?? "执行完成，无返回值";
+            } catch (err) {
+                out.innerText = "运行报错：\n" + err.message;
+            }
+        }
     </script>
 </body>
 </html>
