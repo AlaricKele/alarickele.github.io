@@ -155,13 +155,13 @@
             color: #555;
         }
 
-        /* Python 运行区域 */
-        .python-box {
+        /* 通用板块样式 */
+        .box {
             margin-top: 60px;
             padding-top: 30px;
             border-top: 1px solid #eee;
         }
-        .python-box h3 {
+        .box h3 {
             font-size: 22px;
             margin-bottom: 20px;
             letter-spacing: 2px;
@@ -203,6 +203,58 @@
             white-space: pre-wrap;
         }
 
+        /* 计算器样式 */
+        .calc-wrap {
+            max-width: 320px;
+            margin: 0 auto;
+            background: #f8f8f8;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px #ccc;
+        }
+        #calc-input {
+            width: 100%;
+            height: 60px;
+            font-size: 24px;
+            text-align: right;
+            padding: 0 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            outline: none;
+        }
+        .calc-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        .calc-buttons button {
+            height: 50px;
+            font-size: 18px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #fff;
+            box-shadow: 0 1px 3px #ccc;
+        }
+        .calc-buttons button:hover {
+            background: #e9e9e9;
+        }
+        .calc-buttons .opt {
+            background: #333;
+            color: #fff;
+        }
+        .calc-buttons .opt:hover {
+            background: #555;
+        }
+        .calc-buttons .clear {
+            background: #c0392b;
+            color: #fff;
+        }
+        .calc-buttons .clear:hover {
+            background: #a02c1e;
+        }
+
         /* 底部 */
         footer {
             text-align: center;
@@ -234,6 +286,8 @@
                 <a href="#feature" class="en">Features</a>
                 <a href="#culture" class="zh">文化传承</a>
                 <a href="#culture" class="en">Culture</a>
+                <a href="#calculator" class="zh">简易计算器</a>
+                <a href="#calculator" class="en">Calculator</a>
                 <a href="#python" class="zh">代码运行</a>
                 <a href="#python" class="en">Code Run</a>
             </div>
@@ -251,6 +305,7 @@
                 <li><a href="#intro" class="zh">作品赏析</a><a href="#intro" class="en">Appreciation</a></li>
                 <li><a href="#feature" class="zh">笔墨技法</a><a href="#feature" class="en">Skills</a></li>
                 <li><a href="#culture" class="zh">历史渊源</a><a href="#culture" class="en">History</a></li>
+                <li><a href="#calculator" class="zh">简易计算器</a><a href="#calculator" class="en">Calculator</a></li>
                 <li><a href="#python" class="zh">Python运行</a><a href="#python" class="en">Python Run</a></li>
                 <li><a href="#" class="zh">联系我们</a><a href="#" class="en">Contact</a></li>
             </ul>
@@ -314,8 +369,39 @@
                 </div>
             </section>
 
+            <!-- 计算器区域 -->
+            <section id="calculator" class="box">
+                <h3 class="zh">简易计算器</h3>
+                <h3 class="en">Simple Calculator</h3>
+                <div class="calc-wrap">
+                    <input type="text" id="calc-input" readonly>
+                    <div class="calc-buttons">
+                        <button class="clear" onclick="clearCalc()">C</button>
+                        <button class="opt" onclick="addChar('/')">÷</button>
+                        <button class="opt" onclick="addChar('*')">×</button>
+                        <button class="opt" onclick="addChar('-')">-</button>
+
+                        <button onclick="addChar('7')">7</button>
+                        <button onclick="addChar('8')">8</button>
+                        <button onclick="addChar('9')">9</button>
+                        <button class="opt" onclick="addChar('+')">+</button>
+
+                        <button onclick="addChar('4')">4</button>
+                        <button onclick="addChar('5')">5</button>
+                        <button onclick="addChar('6')">6</button>
+                        <button onclick="calcEqual()" style="background:#222;color:#fff;">=</button>
+
+                        <button onclick="addChar('1')">1</button>
+                        <button onclick="addChar('2')">2</button>
+                        <button onclick="addChar('3')">3</button>
+                        <button onclick="addChar('0')" style="grid-column: span 2;">0</button>
+                        <button onclick="addChar('.')">.</button>
+                    </div>
+                </div>
+            </section>
+
             <!-- Python 在线运行区域 -->
-            <section id="python" class="python-box">
+            <section id="python" class="box">
                 <h3 class="zh">Python 代码在线运行</h3>
                 <h3 class="en">Online Python Runner</h3>
                 <div class="btn-group">
@@ -372,13 +458,12 @@
         }
         initPy();
 
-        // 读取仓库内的 main.py 文件，载入编辑框
+        // 读取仓库内的 main.py 文件
         async function loadLocalPy() {
             const codeArea = document.getElementById('codeArea');
             const out = document.getElementById('output');
             out.innerText = "";
             try {
-                // 读取同目录下 main.py
                 const res = await fetch("main.py");
                 if (!res.ok) throw new Error("文件读取失败");
                 const pyCode = await res.text();
@@ -389,7 +474,7 @@
             }
         }
 
-        // 执行代码
+        // 执行Python代码
         async function runPython() {
             const code = document.getElementById('codeArea').value;
             const out = document.getElementById('output');
@@ -399,6 +484,28 @@
                 out.innerText = result ?? "执行完成，无返回值";
             } catch (err) {
                 out.innerText = "运行报错：\n" + err.message;
+            }
+        }
+
+        // ========== 计算器逻辑 ==========
+        const input = document.getElementById('calc-input');
+        // 追加字符
+        function addChar(char) {
+            input.value += char;
+        }
+        // 清空
+        function clearCalc() {
+            input.value = '';
+        }
+        // 计算结果
+        function calcEqual() {
+            try {
+                // 替换乘除符号为JS识别格式
+                let exp = input.value.replace(/×/g, '*');
+                let res = eval(exp);
+                input.value = res;
+            } catch (e) {
+                input.value = '计算错误';
             }
         }
     </script>
