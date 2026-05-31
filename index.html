@@ -66,11 +66,46 @@
             .parallax {
                 transition: transform 0.2s ease-out;
             }
+            .image-modal {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.9);
+                z-index: 1000;
+                justify-content: center;
+                align-items: center;
+            }
+            .image-modal.active {
+                display: flex;
+            }
+            .modal-image {
+                max-width: 90%;
+                max-height: 90%;
+                object-fit: contain;
+            }
+            .close-modal {
+                position: absolute;
+                top: 20px;
+                right: 30px;
+                color: white;
+                font-size: 40px;
+                font-weight: bold;
+                cursor: pointer;
+            }
         }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body class="bg-paper paper-texture font-sans text-ink overflow-x-hidden">
+    <!-- 图片查看模态框 -->
+    <div id="image-modal" class="image-modal">
+        <span class="close-modal">&times;</span>
+        <img id="modal-image" class="modal-image" src="" alt="大图查看">
+    </div>
+
     <!-- 导航栏 -->
     <nav id="navbar" class="fixed top-0 left-0 w-full z-50 transition-all duration-500 bg-transparent">
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">
@@ -80,6 +115,7 @@
                 <a href="#features" class="text-white hover:text-accent transition-colors duration-300">艺术特点</a>
                 <a href="#techniques" class="text-white hover:text-accent transition-colors duration-300">技法解析</a>
                 <a href="#gallery" class="text-white hover:text-accent transition-colors duration-300">经典作品</a>
+                <a href="#scrolls" class="text-white hover:text-accent transition-colors duration-300">百米长卷</a>
                 <a href="#artists" class="text-white hover:text-accent transition-colors duration-300">名家风采</a>
             </div>
             <button id="menu-toggle" class="md:hidden text-white text-2xl">
@@ -93,6 +129,7 @@
                 <a href="#features" class="text-white hover:text-accent transition-colors duration-300 py-2">艺术特点</a>
                 <a href="#techniques" class="text-white hover:text-accent transition-colors duration-300 py-2">技法解析</a>
                 <a href="#gallery" class="text-white hover:text-accent transition-colors duration-300 py-2">经典作品</a>
+                <a href="#scrolls" class="text-white hover:text-accent transition-colors duration-300 py-2">百米长卷</a>
                 <a href="#artists" class="text-white hover:text-accent transition-colors duration-300 py-2">名家风采</a>
             </div>
         </div>
@@ -143,7 +180,7 @@
                     <div class="fade-in relative">
                         <div class="absolute -top-4 -left-4 w-full h-full border-2 border-accent/30"></div>
                         <!-- 使用吴道子八十七神仙卷局部，展示唐代白墨画成就 -->
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Eight-Immortals-2.jpg/800px-Eight-Immortals-2.jpg" alt="吴道子 八十七神仙卷局部" class="w-full h-auto shadow-xl">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Eight-Immortals-2.jpg/800px-Eight-Immortals-2.jpg" alt="吴道子 八十七神仙卷局部" class="w-full h-auto shadow-xl cursor-pointer gallery-image">
                     </div>
                 </div>
             </div>
@@ -234,7 +271,7 @@
                 <div class="fade-in order-1 md:order-2 relative">
                     <div class="absolute -bottom-4 -right-4 w-full h-full border-2 border-accent/30"></div>
                     <!-- 使用郑板桥竹石图，完美展示墨色对比和线条勾勒技法 -->
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Zheng_Xie_-_Bamboo_and_Rocks.jpg/800px-Zheng_Xie_-_Bamboo_and_Rocks.jpg" alt="郑板桥 竹石图" class="w-full h-auto shadow-xl">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Zheng_Xie_-_Bamboo_and_Rocks.jpg/800px-Zheng_Xie_-_Bamboo_and_Rocks.jpg" alt="郑板桥 竹石图" class="w-full h-auto shadow-xl cursor-pointer gallery-image">
                 </div>
             </div>
         </div>
@@ -248,42 +285,42 @@
             </h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div class="fade-in group relative overflow-hidden rounded-sm shadow-lg">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Ma_Yuan_-_Angler_on_a_Winter_Lake.jpg/800px-Ma_Yuan_-_Angler_on_a_Winter_Lake.jpg" alt="寒江独钓图" class="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Ma_Yuan_-_Angler_on_a_Winter_Lake.jpg/800px-Ma_Yuan_-_Angler_on_a_Winter_Lake.jpg" alt="寒江独钓图" class="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110 cursor-pointer gallery-image">
                     <div class="absolute inset-0 bg-gradient-to-t from-ink/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
                         <h3 class="text-white text-xl font-serif font-bold">寒江独钓图</h3>
                         <p class="text-white/80">宋代 · 马远</p>
                     </div>
                 </div>
                 <div class="fade-in group relative overflow-hidden rounded-sm shadow-lg" style="transition-delay: 0.2s">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Zheng_Xie_-_Bamboo_and_Rocks.jpg/800px-Zheng_Xie_-_Bamboo_and_Rocks.jpg" alt="竹石图" class="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Zheng_Xie_-_Bamboo_and_Rocks.jpg/800px-Zheng_Xie_-_Bamboo_and_Rocks.jpg" alt="竹石图" class="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110 cursor-pointer gallery-image">
                     <div class="absolute inset-0 bg-gradient-to-t from-ink/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
                         <h3 class="text-white text-xl font-serif font-bold">竹石图</h3>
                         <p class="text-white/80">清代 · 郑板桥</p>
                     </div>
                 </div>
                 <div class="fade-in group relative overflow-hidden rounded-sm shadow-lg" style="transition-delay: 0.4s">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Eight-Immortals-2.jpg/800px-Eight-Immortals-2.jpg" alt="八十七神仙卷" class="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Eight-Immortals-2.jpg/800px-Eight-Immortals-2.jpg" alt="八十七神仙卷" class="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110 cursor-pointer gallery-image">
                     <div class="absolute inset-0 bg-gradient-to-t from-ink/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
                         <h3 class="text-white text-xl font-serif font-bold">八十七神仙卷</h3>
                         <p class="text-white/80">唐代 · 吴道子</p>
                     </div>
                 </div>
                 <div class="fade-in group relative overflow-hidden rounded-sm shadow-lg" style="transition-delay: 0.6s">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Ma_Yuan_-_Plum_Blossoms_in_Snow.jpg/800px-Ma_Yuan_-_Plum_Blossoms_in_Snow.jpg" alt="梅石溪凫图" class="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Ma_Yuan_-_Plum_Blossoms_in_Snow.jpg/800px-Ma_Yuan_-_Plum_Blossoms_in_Snow.jpg" alt="梅石溪凫图" class="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110 cursor-pointer gallery-image">
                     <div class="absolute inset-0 bg-gradient-to-t from-ink/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
                         <h3 class="text-white text-xl font-serif font-bold">梅石溪凫图</h3>
                         <p class="text-white/80">宋代 · 马远</p>
                     </div>
                 </div>
                 <div class="fade-in group relative overflow-hidden rounded-sm shadow-lg" style="transition-delay: 0.8s">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Ni_Zan_-_Six_Gentlemen.jpg/800px-Ni_Zan_-_Six_Gentlemen.jpg" alt="六君子图" class="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Ni_Zan_-_Six_Gentlemen.jpg/800px-Ni_Zan_-_Six_Gentlemen.jpg" alt="六君子图" class="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110 cursor-pointer gallery-image">
                     <div class="absolute inset-0 bg-gradient-to-t from-ink/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
                         <h3 class="text-white text-xl font-serif font-bold">六君子图</h3>
                         <p class="text-white/80">元代 · 倪瓒</p>
                     </div>
                 </div>
                 <div class="fade-in group relative overflow-hidden rounded-sm shadow-lg" style="transition-delay: 1s">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Li_Kan_-_Bamboo.jpg/800px-Li_Kan_-_Bamboo.jpg" alt="墨竹图" class="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Li_Kan_-_Bamboo.jpg/800px-Li_Kan_-_Bamboo.jpg" alt="墨竹图" class="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110 cursor-pointer gallery-image">
                     <div class="absolute inset-0 bg-gradient-to-t from-ink/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
                         <h3 class="text-white text-xl font-serif font-bold">墨竹图</h3>
                         <p class="text-white/80">元代 · 李衎</p>
@@ -293,8 +330,50 @@
         </div>
     </section>
 
+    <!-- 新增：当代百米长卷板块 -->
+    <section id="scrolls" class="py-24 bg-paper">
+        <div class="container mx-auto px-6">
+            <h2 class="text-[clamp(2rem,5vw,3rem)] font-serif font-bold text-center mb-16 brush-stroke inline-block">
+                当代百米长卷
+            </h2>
+            <p class="text-lg text-center max-w-3xl mx-auto mb-12 fade-in">
+                当代艺术家们继承和发扬了白墨画的传统，创作了许多气势恢宏的百米长卷作品，展现了白墨画在新时代的无限活力。
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="fade-in group relative overflow-hidden rounded-sm shadow-lg">
+                    <img src="https://so1.360tres.com/t0159741adc725bad62.jpg" alt="白墨画百米长卷" class="w-full h-96 object-cover transition-transform duration-700 group-hover:scale-105 cursor-pointer gallery-image">
+                    <div class="absolute inset-0 bg-gradient-to-t from-ink/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
+                        <h3 class="text-white text-xl font-serif font-bold">《紫气东来》</h3>
+                        <p class="text-white/80">当代 · 半喜</p>
+                    </div>
+                </div>
+                <div class="fade-in group relative overflow-hidden rounded-sm shadow-lg" style="transition-delay: 0.2s">
+                    <img src="https://cbu01.alicdn.com/img/ibank/9241719759_1639681604.310x310.jpg" alt="白墨画长卷" class="w-full h-96 object-cover transition-transform duration-700 group-hover:scale-105 cursor-pointer gallery-image">
+                    <div class="absolute inset-0 bg-gradient-to-t from-ink/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
+                        <h3 class="text-white text-xl font-serif font-bold">《霞光》</h3>
+                        <p class="text-white/80">当代 · 佚名</p>
+                    </div>
+                </div>
+                <div class="fade-in group relative overflow-hidden rounded-sm shadow-lg" style="transition-delay: 0.4s">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Along_the_River_During_the_Qingming_Festival.jpg/1920px-Along_the_River_During_the_Qingming_Festival.jpg" alt="清明上河图局部" class="w-full h-96 object-cover transition-transform duration-700 group-hover:scale-105 cursor-pointer gallery-image">
+                    <div class="absolute inset-0 bg-gradient-to-t from-ink/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
+                        <h3 class="text-white text-xl font-serif font-bold">《清明上河图》局部</h3>
+                        <p class="text-white/80">宋代 · 张择端</p>
+                    </div>
+                </div>
+                <div class="fade-in group relative overflow-hidden rounded-sm shadow-lg" style="transition-delay: 0.6s">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Gu_Kaizhi_-_Nymph_of_the_Luo_River_-_Google_Art_Project.jpg/1920px-Gu_Kaizhi_-_Nymph_of_the_Luo_River_-_Google_Art_Project.jpg" alt="洛神赋图局部" class="w-full h-96 object-cover transition-transform duration-700 group-hover:scale-105 cursor-pointer gallery-image">
+                    <div class="absolute inset-0 bg-gradient-to-t from-ink/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
+                        <h3 class="text-white text-xl font-serif font-bold">《洛神赋图》局部</h3>
+                        <p class="text-white/80">东晋 · 顾恺之</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- 名家风采 -->
-    <section id="artists" class="py-24 bg-paper">
+    <section id="artists" class="py-24 bg-light">
         <div class="container mx-auto px-6">
             <h2 class="text-[clamp(2rem,5vw,3rem)] font-serif font-bold text-center mb-16 brush-stroke inline-block">
                 白墨画名家风采
@@ -472,6 +551,40 @@
                 const speed = element.getAttribute('data-speed') || 0.5;
                 element.style.transform = `translateY(${scrolled * speed}px)`;
             });
+        });
+
+        // 图片点击放大功能
+        const modal = document.getElementById('image-modal');
+        const modalImage = document.getElementById('modal-image');
+        const closeModal = document.querySelector('.close-modal');
+        const galleryImages = document.querySelectorAll('.gallery-image');
+
+        galleryImages.forEach(image => {
+            image.addEventListener('click', () => {
+                modal.classList.add('active');
+                modalImage.src = image.src;
+                document.body.style.overflow = 'hidden';
+            });
+        });
+
+        closeModal.addEventListener('click', () => {
+            modal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        });
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+        });
+
+        // 按ESC键关闭模态框
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+                modal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
         });
     </script>
 </body>
