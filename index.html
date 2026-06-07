@@ -3,1776 +3,589 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>白墨画 · White Ink Art · 水墨艺术</title>
+    <title>我的世界风格 - 随机地形生成器（修复版）</title>
     <style>
         :root {
-            --bg: #1a1a1a;
-            --bg-light: #242424;
-            --bg-card: #1e1e1e;
-            --text: #e0d8cc;
-            --text-light: #c5bdaa;
-            --text-muted: #a09888;
-            --white-ink: #f5f0e8;
-            --white-ink-dim: #d5cec0;
-            --accent: #c9b896;
-            --accent-light: #e0d5c0;
-            --border: #3a3530;
-            --border-light: #4a4540;
-            --shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
-            --radius: 12px;
-            --transition: 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            --font-cn: 'STSong', 'Songti SC', 'Noto Serif SC', 'SimSun', 'KaiTi', 'STKaiti', '楷体', '华文楷体', serif;
-            --font-display: 'STKaiti', 'KaiTi', '楷体', '华文楷体', 'STSong', serif;
-            --font-body: 'Cormorant Garamond', 'EB Garamond', 'Garamond', 'Georgia', 'STSong', 'Songti SC', serif;
-            --font-arabic: 'Noto Naskh Arabic', 'Traditional Arabic', 'Scheherazade New', serif;
+            --bg: #1a1a2e;
+            --panel-bg: rgba(20, 20, 40, 0.9);
+            --text: #e0e0e0;
+            --accent: #5cb85c;
+            --accent2: #f0ad4e;
         }
 
-        /* RTL support */
-        [dir="rtl"] {
-            direction: rtl;
-            text-align: right;
-        }
-        [dir="rtl"] .nav-links {
-            flex-direction: row-reverse;
-        }
-        [dir="rtl"] .lang-dropdown {
-            right: auto;
-            left: 0;
-        }
-        [dir="rtl"] .section-header .line {
-            margin-left: 0;
-            margin-right: auto;
-        }
-        [dir="rtl"] .gallery-info {
-            text-align: right;
-        }
-        [dir="rtl"] .footer-grid {
-            direction: rtl;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background-color: var(--bg);
-            color: var(--text);
-            font-family: var(--font-body);
-            line-height: 1.7;
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            transition: background-color 0.6s ease;
-        }
-
-        /* Canvas background */
-        #inkCanvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 0;
-            opacity: 0.55;
-        }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
             background: var(--bg);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--border-light);
-            border-radius: 3px;
-        }
-
-        /* Main container */
-        .main-container {
-            position: relative;
-            z-index: 1;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 40px;
-        }
-
-        /* ========== NAVBAR ========== */
-        .navbar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            padding: 16px 40px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            transition: all 0.5s ease;
-            backdrop-filter: blur(0px);
-            -webkit-backdrop-filter: blur(0px);
-        }
-        .navbar.scrolled {
-            background: rgba(20, 20, 20, 0.85);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border);
-            padding: 10px 40px;
-            box-shadow: 0 2px 30px rgba(0, 0, 0, 0.4);
-        }
-        .nav-brand {
-            font-family: var(--font-display);
-            font-size: 1.6rem;
-            color: var(--white-ink);
-            letter-spacing: 0.08em;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all var(--transition);
-            text-shadow: 0 0 40px rgba(255, 250, 240, 0.25);
-        }
-        .nav-brand:hover {
-            color: #fff;
-            text-shadow: 0 0 60px rgba(255, 250, 240, 0.45);
-        }
-        .nav-brand .dot {
-            display: inline-block;
-            width: 7px;
-            height: 7px;
-            background: var(--white-ink);
-            border-radius: 50%;
-            margin-left: 2px;
-            vertical-align: middle;
-            animation: dotPulse 2.5s ease-in-out infinite;
-            box-shadow: 0 0 12px rgba(255, 250, 240, 0.6);
-        }
-        @keyframes dotPulse {
-            0%,
-            100% {
-                opacity: 0.4;
-                transform: scale(0.8);
-            }
-            50% {
-                opacity: 1;
-                transform: scale(1.5);
-            }
-        }
-        .nav-links {
-            display: flex;
-            align-items: center;
-            gap: 32px;
-            list-style: none;
-        }
-        .nav-links a {
-            color: var(--text-light);
-            text-decoration: none;
-            font-size: 0.95rem;
-            letter-spacing: 0.05em;
-            position: relative;
-            transition: color var(--transition);
-            cursor: pointer;
-            font-family: var(--font-display);
-        }
-        .nav-links a::after {
-            content: '';
-            position: absolute;
-            bottom: -4px;
-            left: 0;
-            width: 0;
-            height: 1px;
-            background: var(--white-ink);
-            transition: width var(--transition);
-        }
-        .nav-links a:hover {
-            color: var(--white-ink);
-        }
-        .nav-links a:hover::after {
-            width: 100%;
-        }
-
-        /* Language Switcher */
-        .lang-switcher {
-            position: relative;
-            cursor: pointer;
+            overflow: hidden;
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            height: 100vh;
+            width: 100vw;
             user-select: none;
-            z-index: 1001;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            cursor: grab;
         }
-        .lang-current {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 14px;
-            border: 1px solid var(--border-light);
-            border-radius: 25px;
-            color: var(--text-light);
-            font-size: 0.85rem;
-            letter-spacing: 0.04em;
-            transition: all var(--transition);
-            background: rgba(30, 30, 30, 0.6);
-            font-family: var(--font-display);
-            white-space: nowrap;
-        }
-        .lang-current:hover {
-            border-color: var(--accent);
-            color: var(--white-ink);
-            background: rgba(40, 38, 35, 0.8);
-        }
-        .lang-current .arrow {
-            font-size: 0.6rem;
-            transition: transform var(--transition);
-        }
-        .lang-switcher.open .lang-current .arrow {
-            transform: rotate(180deg);
-        }
-        .lang-dropdown {
-            position: absolute;
-            top: calc(100% + 8px);
-            right: 0;
-            background: rgba(28, 26, 24, 0.96);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 8px 0;
-            min-width: 200px;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px);
-            transition: all var(--transition);
-            box-shadow: var(--shadow);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            list-style: none;
-        }
-        .lang-switcher.open .lang-dropdown {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-        .lang-dropdown li {
-            padding: 10px 20px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            color: var(--text-light);
-            transition: all 0.25s ease;
-            letter-spacing: 0.03em;
-            white-space: nowrap;
-            font-family: var(--font-display);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .lang-dropdown li:hover {
-            background: rgba(255, 250, 240, 0.06);
-            color: var(--white-ink);
-        }
-        .lang-dropdown li.active {
-            color: var(--accent-light);
-            font-weight: bold;
-        }
-        .lang-dropdown li .lang-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: transparent;
-            transition: all 0.3s;
-        }
-        .lang-dropdown li.active .lang-dot {
-            background: var(--accent-light);
-            box-shadow: 0 0 10px var(--accent);
-        }
+        body:active { cursor: grabbing; }
+        body.dragging { cursor: grabbing; }
 
-        /* Mobile menu toggle */
-        .mobile-toggle {
-            display: none;
-            flex-direction: column;
-            gap: 5px;
-            cursor: pointer;
-            z-index: 1002;
-            padding: 8px;
-        }
-        .mobile-toggle span {
-            width: 26px;
-            height: 2px;
-            background: var(--text-light);
-            border-radius: 2px;
-            transition: all 0.3s ease;
-        }
-        .mobile-toggle.open span:nth-child(1) {
-            transform: rotate(45deg) translate(5px, 5px);
-        }
-        .mobile-toggle.open span:nth-child(2) {
-            opacity: 0;
-        }
-        .mobile-toggle.open span:nth-child(3) {
-            transform: rotate(-45deg) translate(5px, -5px);
-        }
+        #canvas-container { position: fixed; inset: 0; z-index: 1; }
+        canvas { display: block; }
 
-        /* ========== HERO SECTION ========== */
-        .hero {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            position: relative;
-            padding: 120px 20px 80px;
-        }
-        .hero-seal {
-            width: 90px;
-            height: 90px;
-            border: 2px solid var(--white-ink-dim);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 40px;
-            opacity: 0.7;
-            animation: sealFloat 6s ease-in-out infinite;
-            position: relative;
-        }
-        .hero-seal::after {
-            content: '墨';
-            font-family: var(--font-display);
-            font-size: 2rem;
-            color: var(--white-ink-dim);
-            letter-spacing: 0;
-        }
-        @keyframes sealFloat {
-            0%,
-            100% {
-                transform: translateY(0) rotate(0deg);
-            }
-            25% {
-                transform: translateY(-12px) rotate(2deg);
-            }
-            50% {
-                transform: translateY(-4px) rotate(0deg);
-            }
-            75% {
-                transform: translateY(-16px) rotate(-2deg);
-            }
-        }
-        .hero-title {
-            font-family: var(--font-display);
-            font-size: clamp(3rem, 7vw, 6.5rem);
-            color: var(--white-ink);
-            letter-spacing: 0.12em;
-            line-height: 1.15;
-            margin-bottom: 20px;
-            text-shadow: 0 0 80px rgba(240, 230, 210, 0.3), 0 0 200px rgba(200, 180, 150, 0.15);
-            animation: titleReveal 1.8s ease-out;
-        }
-        @keyframes titleReveal {
-            from {
-                opacity: 0;
-                letter-spacing: 0.3em;
-                filter: blur(8px);
-            }
-            to {
-                opacity: 1;
-                letter-spacing: 0.12em;
-                filter: blur(0);
-            }
-        }
-        .hero-subtitle {
-            font-family: var(--font-display);
-            font-size: clamp(1rem, 2vw, 1.35rem);
-            color: var(--text-muted);
-            letter-spacing: 0.2em;
-            margin-bottom: 50px;
-            animation: fadeInUp 2s ease-out 0.3s both;
-        }
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        .hero-scroll-indicator {
-            position: absolute;
-            bottom: 40px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            animation: fadeInUp 2s ease-out 1s both;
-            cursor: pointer;
-        }
-        .hero-scroll-indicator span {
-            font-size: 0.7rem;
-            letter-spacing: 0.15em;
-            color: var(--text-muted);
-            font-family: var(--font-display);
-        }
-        .hero-scroll-line {
-            width: 1px;
-            height: 50px;
-            background: linear-gradient(to bottom, var(--text-muted), transparent);
-            animation: scrollLine 2s ease-in-out infinite;
-        }
-        @keyframes scrollLine {
-            0%,
-            100% {
-                height: 30px;
-                opacity: 0.4;
-            }
-            50% {
-                height: 60px;
-                opacity: 1;
-            }
-        }
-
-        /* ========== SECTION STYLES ========== */
-        .section {
-            padding: 100px 0;
-            position: relative;
-        }
-        .section-header {
-            text-align: center;
-            margin-bottom: 70px;
-            animation: fadeInUp 1.2s ease-out both;
-        }
-        .section-header .section-tag {
-            font-size: 0.75rem;
-            letter-spacing: 0.3em;
-            color: var(--accent);
-            text-transform: uppercase;
-            margin-bottom: 12px;
-            font-family: var(--font-display);
-        }
-        .section-header h2 {
-            font-family: var(--font-display);
-            font-size: clamp(2rem, 4vw, 3rem);
-            color: var(--white-ink);
-            letter-spacing: 0.08em;
-            margin-bottom: 16px;
-        }
-        .section-header .line {
-            width: 60px;
-            height: 1px;
-            background: var(--accent);
-            margin: 0 auto;
-            opacity: 0.6;
-        }
-        .section-header p {
-            margin-top: 16px;
-            color: var(--text-muted);
-            font-size: 1rem;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-            letter-spacing: 0.04em;
-        }
-
-        /* ========== GALLERY ========== */
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 40px;
-            padding: 0;
-        }
-        .gallery-item {
-            position: relative;
-            border-radius: var(--radius);
-            overflow: hidden;
-            cursor: pointer;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            transition: all var(--transition);
-            animation: fadeInUp 1s ease-out both;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-        }
-        .gallery-item:nth-child(1) {
-            animation-delay: 0.1s;
-        }
-        .gallery-item:nth-child(2) {
-            animation-delay: 0.25s;
-        }
-        .gallery-item:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-        .gallery-item:nth-child(4) {
-            animation-delay: 0.55s;
-        }
-        .gallery-item:nth-child(5) {
-            animation-delay: 0.7s;
-        }
-        .gallery-item:nth-child(6) {
-            animation-delay: 0.85s;
-        }
-        .gallery-item:hover {
-            transform: translateY(-8px);
-            border-color: var(--border-light);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 40px rgba(200, 180, 150, 0.08);
-        }
-        .gallery-image {
-            width: 100%;
-            aspect-ratio: 4/3;
-            background-size: cover;
-            background-position: center;
-            position: relative;
-            transition: all 0.8s ease;
-            filter: grayscale(0.3) brightness(0.85);
-        }
-        .gallery-item:hover .gallery-image {
-            transform: scale(1.04);
-            filter: grayscale(0) brightness(0.95);
-        }
-        .gallery-image.img1 {
-            background: radial-gradient(ellipse at 40% 50%, #3a3530 0%, #1a1815 40%, #252220 70%, #1a1a1a 100%);
-            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><defs><filter id="blur1"><feGaussianBlur stdDeviation="2"/></filter><filter id="blur2"><feGaussianBlur stdDeviation="6"/></filter></defs><rect fill="%231a1815" width="400" height="300"/><ellipse cx="180" cy="160" rx="120" ry="80" fill="none" stroke="%23d5cec0" stroke-width="1.5" opacity="0.7" filter="url(%23blur1)"/><ellipse cx="200" cy="140" rx="80" ry="60" fill="none" stroke="%23f5f0e8" stroke-width="1" opacity="0.5" filter="url(%23blur2)"/><circle cx="130" cy="200" r="30" fill="%23e0d8cc" opacity="0.3" filter="url(%23blur2)"/><path d="M60 250 Q 150 120 300 200" fill="none" stroke="%23c5bdaa" stroke-width="2" opacity="0.4" filter="url(%23blur1)"/><path d="M100 260 Q 200 160 350 220" fill="none" stroke="%23f5f0e8" stroke-width="1" opacity="0.35" filter="url(%23blur2)"/><circle cx="280" cy="100" r="15" fill="%23e8e0d4" opacity="0.25" filter="url(%23blur2)"/></svg>');
-            background-size: cover;
-            background-position: center;
-        }
-        .gallery-image.img2 {
-            background: radial-gradient(ellipse at 60% 40%, #322e2a 0%, #1a1815 45%, #201e1b 65%, #1a1a1a 100%);
-            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><defs><filter id="b1"><feGaussianBlur stdDeviation="3"/></filter><filter id="b2"><feGaussianBlur stdDeviation="7"/></filter></defs><rect fill="%231a1815" width="400" height="300"/><path d="M50 180 Q 180 60 350 170" fill="none" stroke="%23f0e8d8" stroke-width="2.5" opacity="0.55" filter="url(%23b1)"/><ellipse cx="200" cy="150" rx="90" ry="55" fill="none" stroke="%23d5cec0" stroke-width="1" opacity="0.4" filter="url(%23b2)"/><circle cx="100" cy="220" r="25" fill="%23e0d8cc" opacity="0.22" filter="url(%23b2)"/><circle cx="310" cy="130" r="18" fill="%23f5f0e8" opacity="0.2" filter="url(%23b2)"/><path d="M140 100 Q 200 180 280 90" fill="none" stroke="%23c5bdaa" stroke-width="1.5" opacity="0.35" filter="url(%23b1)"/></svg>');
-            background-size: cover;
-            background-position: center;
-        }
-        .gallery-image.img3 {
-            background: radial-gradient(ellipse at 35% 55%, #35302c 0%, #1a1815 50%, #22201d 60%, #1a1a1a 100%);
-            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><defs><filter id="c1"><feGaussianBlur stdDeviation="2.5"/></filter><filter id="c2"><feGaussianBlur stdDeviation="5"/></filter></defs><rect fill="%231a1815" width="400" height="300"/><ellipse cx="160" cy="170" rx="100" ry="70" fill="none" stroke="%23f5f0e8" stroke-width="1.8" opacity="0.5" filter="url(%23c1)"/><circle cx="280" cy="180" r="35" fill="%23d5cec0" opacity="0.18" filter="url(%23c2)"/><path d="M80 200 Q 200 80 340 190" fill="none" stroke="%23e0d8cc" stroke-width="1.2" opacity="0.45" filter="url(%23c1)"/><circle cx="120" cy="120" r="20" fill="%23f0e8d8" opacity="0.2" filter="url(%23c2)"/></svg>');
-            background-size: cover;
-            background-position: center;
-        }
-        .gallery-image.img4 {
-            background: radial-gradient(ellipse at 50% 45%, #302c28 0%, #1a1815 45%, #1f1d1a 70%, #1a1a1a 100%);
-            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><defs><filter id="d1"><feGaussianBlur stdDeviation="3"/></filter><filter id="d2"><feGaussianBlur stdDeviation="8"/></filter></defs><rect fill="%231a1815" width="400" height="300"/><path d="M30 160 Q 160 40 370 150" fill="none" stroke="%23f5f0e8" stroke-width="2" opacity="0.5" filter="url(%23d1)"/><ellipse cx="200" cy="140" rx="110" ry="65" fill="none" stroke="%23c5bdaa" stroke-width="1.3" opacity="0.35" filter="url(%23d2)"/><circle cx="300" cy="200" r="22" fill="%23e8e0d4" opacity="0.25" filter="url(%23d2)"/><circle cx="80" cy="100" r="28" fill="%23d5cec0" opacity="0.2" filter="url(%23d2)"/></svg>');
-            background-size: cover;
-            background-position: center;
-        }
-        .gallery-image.img5 {
-            background: radial-gradient(ellipse at 45% 50%, #383430 0%, #1a1815 40%, #262420 65%, #1a1a1a 100%);
-            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><defs><filter id="e1"><feGaussianBlur stdDeviation="2"/></filter><filter id="e2"><feGaussianBlur stdDeviation="6"/></filter></defs><rect fill="%231a1815" width="400" height="300"/><path d="M70 220 Q 190 70 330 210" fill="none" stroke="%23f0e8d8" stroke-width="2.2" opacity="0.48" filter="url(%23e1)"/><circle cx="200" cy="150" r="50" fill="%23e0d8cc" opacity="0.15" filter="url(%23e2)"/><ellipse cx="150" cy="180" rx="60" ry="40" fill="none" stroke="%23d5cec0" stroke-width="1" opacity="0.4" filter="url(%23e1)"/></svg>');
-            background-size: cover;
-            background-position: center;
-        }
-        .gallery-image.img6 {
-            background: radial-gradient(ellipse at 55% 48%, #2e2b27 0%, #1a1815 48%, #23211e 62%, #1a1a1a 100%);
-            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><defs><filter id="f1"><feGaussianBlur stdDeviation="2.8"/></filter><filter id="f2"><feGaussianBlur stdDeviation="7"/></filter></defs><rect fill="%231a1815" width="400" height="300"/><ellipse cx="220" cy="160" rx="95" ry="70" fill="none" stroke="%23f5f0e8" stroke-width="1.6" opacity="0.45" filter="url(%23f1)"/><path d="M50 180 Q 200 50 360 170" fill="none" stroke="%23c5bdaa" stroke-width="1.8" opacity="0.38" filter="url(%23f2)"/><circle cx="100" cy="230" r="20" fill="%23e8e0d4" opacity="0.22" filter="url(%23f2)"/><circle cx="320" cy="110" r="16" fill="%23f0e8d8" opacity="0.2" filter="url(%23f2)"/></svg>');
-            background-size: cover;
-            background-position: center;
-        }
-        .gallery-overlay {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            padding: 25px 20px;
-            background: linear-gradient(to top, rgba(20, 18, 15, 0.95) 0%, rgba(20, 18, 15, 0.7) 60%, transparent 100%);
-            transition: all var(--transition);
-        }
-        .gallery-item:hover .gallery-overlay {
-            padding-bottom: 35px;
-        }
-        .gallery-info h3 {
-            font-family: var(--font-display);
-            font-size: 1.2rem;
-            color: var(--white-ink);
-            letter-spacing: 0.06em;
-            margin-bottom: 4px;
-        }
-        .gallery-info span {
-            font-size: 0.78rem;
-            color: var(--text-muted);
-            letter-spacing: 0.08em;
-            font-family: var(--font-display);
-        }
-
-        /* ========== ABOUT SECTION ========== */
-        .about-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 60px;
-            align-items: center;
-            animation: fadeInUp 1.2s ease-out both;
-        }
-        .about-text h3 {
-            font-family: var(--font-display);
-            font-size: 1.8rem;
-            color: var(--white-ink);
-            letter-spacing: 0.06em;
-            margin-bottom: 20px;
-        }
-        .about-text p {
-            color: var(--text-muted);
-            margin-bottom: 16px;
-            line-height: 1.9;
-            letter-spacing: 0.03em;
-        }
-        .about-visual {
-            aspect-ratio: 1;
-            border-radius: var(--radius);
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-        }
-        .about-visual-inner {
-            width: 70%;
-            height: 70%;
-            border: 1px solid var(--border-light);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: sealFloat 8s ease-in-out infinite;
-            position: relative;
-        }
-        .about-visual-inner::before {
-            content: '白';
-            font-family: var(--font-display);
-            font-size: 4rem;
-            color: var(--white-ink-dim);
-            opacity: 0.7;
-        }
-        .about-visual-inner::after {
-            content: '';
-            position: absolute;
-            inset: -20px;
-            border: 1px dashed var(--border-light);
-            border-radius: 50%;
-            opacity: 0.4;
-            animation: sealFloat 10s ease-in-out infinite reverse;
-        }
-
-        /* ========== TECHNIQUE SECTION ========== */
-        .technique-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 30px;
-            list-style: none;
-        }
-        .technique-item {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 35px 28px;
-            transition: all var(--transition);
-            animation: fadeInUp 1s ease-out both;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-        }
-        .technique-item:nth-child(1) {
-            animation-delay: 0.1s;
-        }
-        .technique-item:nth-child(2) {
-            animation-delay: 0.25s;
-        }
-        .technique-item:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-        .technique-item:nth-child(4) {
-            animation-delay: 0.55s;
-        }
-        .technique-item:hover {
-            border-color: var(--border-light);
-            transform: translateY(-4px);
-            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
-        }
-        .technique-icon {
-            font-size: 2.4rem;
-            margin-bottom: 16px;
-            opacity: 0.8;
-        }
-        .technique-item h4 {
-            font-family: var(--font-display);
-            font-size: 1.15rem;
-            color: var(--white-ink);
-            letter-spacing: 0.05em;
-            margin-bottom: 8px;
-        }
-        .technique-item p {
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            line-height: 1.7;
-            letter-spacing: 0.03em;
-        }
-
-        /* ========== FOOTER ========== */
-        .footer {
-            border-top: 1px solid var(--border);
-            padding: 50px 0 30px;
-            margin-top: 40px;
-        }
-        .footer-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 40px;
-            margin-bottom: 40px;
-        }
-        .footer-col h5 {
-            font-family: var(--font-display);
-            font-size: 1rem;
-            color: var(--white-ink);
-            letter-spacing: 0.06em;
-            margin-bottom: 16px;
-        }
-        .footer-col p,
-        .footer-col a {
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            line-height: 2;
-            text-decoration: none;
-            display: block;
-            letter-spacing: 0.03em;
-            transition: color 0.3s;
-        }
-        .footer-col a:hover {
-            color: var(--white-ink);
-        }
-        .footer-bottom {
-            text-align: center;
-            padding-top: 30px;
-            border-top: 1px solid var(--border);
-            color: var(--text-muted);
-            font-size: 0.8rem;
-            letter-spacing: 0.05em;
-        }
-
-        /* ========== MODAL ========== */
-        .modal-overlay {
+        #info-panel {
             position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.9);
-            z-index: 2000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.5s ease;
-            cursor: pointer;
-        }
-        .modal-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-        .modal-content {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 50px;
-            max-width: 650px;
-            width: 90%;
-            text-align: center;
-            cursor: default;
-            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
-            position: relative;
-        }
-        .modal-close {
-            position: absolute;
             top: 16px;
-            right: 20px;
-            font-size: 1.5rem;
-            color: var(--text-muted);
-            cursor: pointer;
-            transition: color 0.3s;
-            background: none;
-            border: none;
-            font-family: var(--font-display);
-        }
-        .modal-close:hover {
-            color: var(--white-ink);
-        }
-        .modal-content h3 {
-            font-family: var(--font-display);
-            font-size: 1.8rem;
-            color: var(--white-ink);
-            letter-spacing: 0.06em;
-            margin-bottom: 12px;
-        }
-        .modal-content .modal-artist {
-            color: var(--accent);
-            font-size: 0.85rem;
-            letter-spacing: 0.1em;
-            margin-bottom: 20px;
-            font-family: var(--font-display);
-        }
-        .modal-content p {
-            color: var(--text-muted);
-            line-height: 1.8;
-            letter-spacing: 0.03em;
-        }
-        .modal-visual {
-            width: 100%;
-            aspect-ratio: 16/9;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            background: var(--bg);
-            border: 1px solid var(--border);
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            background: var(--panel-bg);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 20px;
+            padding: 10px 22px;
             display: flex;
             align-items: center;
-            justify-content: center;
-            font-family: var(--font-display);
-            font-size: 3rem;
-            color: var(--white-ink-dim);
-            opacity: 0.6;
-            letter-spacing: 0.1em;
+            gap: 14px;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            pointer-events: auto;
         }
+        #info-panel .dot {
+            width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0;
+        }
+        #info-panel .dot.green { background: #6ab04c; box-shadow: 0 0 8px #6ab04c; }
+        #info-panel span { color: var(--text); font-size: 13px; letter-spacing: 0.5px; white-space: nowrap; }
+        #info-panel .seed-display { color: #ffda79; font-weight: 600; font-size: 13px; }
 
-        /* ========== RESPONSIVE ========== */
-        @media (max-width: 968px) {
-            .nav-links {
-                position: fixed;
-                top: 0;
-                right: -100%;
-                width: 280px;
-                height: 100vh;
-                background: rgba(20, 18, 16, 0.97);
-                flex-direction: column;
-                padding: 100px 40px 40px;
-                gap: 24px;
-                transition: right 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-                backdrop-filter: blur(30px);
-                -webkit-backdrop-filter: blur(30px);
-                z-index: 999;
-                border-left: 1px solid var(--border);
-            }
-            .nav-links.active {
-                right: 0;
-            }
-            .mobile-toggle {
-                display: flex;
-            }
-            .about-content {
-                grid-template-columns: 1fr;
-                gap: 40px;
-            }
-            .gallery-grid {
-                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-                gap: 24px;
-            }
-            .main-container {
-                padding: 0 20px;
-            }
-            .navbar {
-                padding: 12px 20px;
-            }
-            .navbar.scrolled {
-                padding: 8px 20px;
-            }
-            .hero {
-                padding: 100px 16px 60px;
-            }
-            .section {
-                padding: 60px 0;
-            }
+        #btn-group {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            gap: 12px;
+            pointer-events: auto;
         }
-        @media (max-width: 480px) {
-            .hero-title {
-                font-size: 2.4rem;
-                letter-spacing: 0.08em;
-            }
-            .hero-subtitle {
-                font-size: 0.85rem;
-                letter-spacing: 0.12em;
-            }
-            .gallery-grid {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
-            .technique-list {
-                grid-template-columns: 1fr;
-            }
-            .footer-grid {
-                grid-template-columns: 1fr 1fr;
-                gap: 24px;
-            }
-            .lang-dropdown {
-                right: -40px;
-                min-width: 170px;
-            }
-            .lang-current {
-                padding: 6px 10px;
-                font-size: 0.75rem;
-            }
+        .btn {
+            padding: 12px 24px;
+            border-radius: 28px;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            transition: all 0.25s ease;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            outline: none;
+            font-family: inherit;
+        }
+        .btn-regenerate { background: var(--accent); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
+        .btn-regenerate:hover { background: #4cae4c; transform: translateY(-2px); box-shadow: 0 10px 28px rgba(92,184,92,0.4); }
+        .btn-random { background: var(--accent2); color: #333; border: 1px solid rgba(255,255,255,0.2); }
+        .btn-random:hover { background: #ec971f; transform: translateY(-2px); box-shadow: 0 10px 28px rgba(240,173,78,0.4); }
+        .btn-reset { background: rgba(255,255,255,0.1); color: #ccc; border: 1px solid rgba(255,255,255,0.2); }
+        .btn-reset:hover { background: rgba(255,255,255,0.2); color: #fff; transform: translateY(-2px); }
+        .btn:active { transform: scale(0.96); }
+
+        #legend {
+            position: fixed;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            background: var(--panel-bg);
+            border-radius: 16px;
+            padding: 14px 16px;
+            border: 1px solid rgba(255,255,255,0.12);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+            pointer-events: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+        #legend .item { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #ccc; }
+        #legend .swatch { width: 16px; height: 16px; border-radius: 3px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.25); }
+
+        @media (max-width: 768px) {
+            #legend { right: 4px; padding: 8px 10px; gap: 4px; border-radius: 10px; }
+            #legend .item { font-size: 10px; gap: 5px; }
+            #legend .swatch { width: 12px; height: 12px; }
+            #info-panel { padding: 8px 14px; gap: 8px; border-radius: 16px; top: 8px; }
+            #info-panel span { font-size: 11px; }
+            .btn { padding: 10px 16px; font-size: 12px; border-radius: 22px; }
+            #btn-group { gap: 8px; bottom: 16px; }
         }
     </style>
 </head>
 <body>
+<div id="canvas-container"></div>
 
-    <!-- Ink Canvas Background -->
-    <canvas id="inkCanvas"></canvas>
+<div id="info-panel">
+    <span class="dot green"></span>
+    <span>地形种子:</span>
+    <span class="seed-display" id="seed-text">---</span>
+</div>
 
-    <!-- Navigation -->
-    <nav class="navbar" id="navbar">
-        <div class="nav-brand" data-i18n="brand">白墨<span class="dot"></span>画</div>
-        <ul class="nav-links" id="navLinks">
-            <li><a href="#gallery" data-i18n="nav_gallery">作品</a></li>
-            <li><a href="#about" data-i18n="nav_about">关于</a></li>
-            <li><a href="#technique" data-i18n="nav_technique">技法</a></li>
-            <li>
-                <div class="lang-switcher" id="langSwitcher">
-                    <div class="lang-current" id="langCurrent">
-                        <span id="langLabel">中文</span>
-                        <span class="arrow">▾</span>
-                    </div>
-                    <ul class="lang-dropdown" id="langDropdown">
-                        <li data-lang="zh" class="active"><span class="lang-dot"></span>中文</li>
-                        <li data-lang="en"><span class="lang-dot"></span>English</li>
-                        <li data-lang="fr"><span class="lang-dot"></span>Français</li>
-                        <li data-lang="ru"><span class="lang-dot"></span>Русский</li>
-                        <li data-lang="ar"><span class="lang-dot"></span>العربية</li>
-                        <li data-lang="es"><span class="lang-dot"></span>Español</li>
-                    </ul>
-                </div>
-            </li>
-        </ul>
-        <div class="mobile-toggle" id="mobileToggle">
-            <span></span><span></span><span></span>
-        </div>
-    </nav>
+<div id="legend">
+    <div class="item"><span class="swatch" style="background:#f5f5f0;"></span> 雪</div>
+    <div class="item"><span class="swatch" style="background:#8b8b7a;"></span> 岩石</div>
+    <div class="item"><span class="swatch" style="background:#7ec850;"></span> 草地</div>
+    <div class="item"><span class="swatch" style="background:#c2a64b;"></span> 沙地</div>
+    <div class="item"><span class="swatch" style="background:#8b6914;"></span> 泥土</div>
+    <div class="item"><span class="swatch" style="background:#6b6b6b;"></span> 石头</div>
+    <div class="item"><span class="swatch" style="background:#4488cc;"></span> 水</div>
+    <div class="item"><span class="swatch" style="background:#3d7a3d;"></span> 树叶</div>
+    <div class="item"><span class="swatch" style="background:#444444;"></span> 煤矿</div>
+    <div class="item"><span class="swatch" style="background:#d4a373;"></span> 铁矿</div>
+</div>
 
-    <!-- Main Content -->
-    <div class="main-container">
+<div id="btn-group">
+    <button class="btn btn-regenerate" id="btn-regen">🔄 重新生成</button>
+    <button class="btn btn-random" id="btn-random">🎲 随机地形</button>
+    <button class="btn btn-reset" id="btn-reset">🏠 重置视角</button>
+</div>
 
-        <!-- Hero -->
-        <section class="hero" id="hero">
-            <div class="hero-seal"></div>
-            <h1 class="hero-title" data-i18n="hero_title">白墨画</h1>
-            <p class="hero-subtitle" data-i18n="hero_subtitle">以白为墨 · 以暗为纸 · 东方美学</p>
-            <div class="hero-scroll-indicator" onclick="document.getElementById('gallery').scrollIntoView({behavior:'smooth'})">
-                <span data-i18n="scroll_discover">探索</span>
-                <div class="hero-scroll-line"></div>
-            </div>
-        </section>
+<script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+</script>
 
-        <!-- Gallery -->
-        <section class="section" id="gallery">
-            <div class="section-header">
-                <div class="section-tag" data-i18n="gallery_tag">· 作品集 ·</div>
-                <h2 data-i18n="gallery_title">白墨画廊</h2>
-                <div class="line"></div>
-                <p data-i18n="gallery_desc">每一笔白墨，都是光影的反转，是静谧中的力量</p>
-            </div>
-            <div class="gallery-grid">
-                <div class="gallery-item" data-gallery="0">
-                    <div class="gallery-image img1"></div>
-                    <div class="gallery-overlay">
-                        <div class="gallery-info">
-                            <h3 data-i18n="work1_title">寒山孤影</h3>
-                            <span data-i18n="work1_artist">白墨 · 2024</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="gallery-item" data-gallery="1">
-                    <div class="gallery-image img2"></div>
-                    <div class="gallery-overlay">
-                        <div class="gallery-info">
-                            <h3 data-i18n="work2_title">烟波江上</h3>
-                            <span data-i18n="work2_artist">白墨 · 2023</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="gallery-item" data-gallery="2">
-                    <div class="gallery-image img3"></div>
-                    <div class="gallery-overlay">
-                        <div class="gallery-info">
-                            <h3 data-i18n="work3_title">月出惊山</h3>
-                            <span data-i18n="work3_artist">白墨 · 2024</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="gallery-item" data-gallery="3">
-                    <div class="gallery-image img4"></div>
-                    <div class="gallery-overlay">
-                        <div class="gallery-info">
-                            <h3 data-i18n="work4_title">松风流水</h3>
-                            <span data-i18n="work4_artist">白墨 · 2023</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="gallery-item" data-gallery="4">
-                    <div class="gallery-image img5"></div>
-                    <div class="gallery-overlay">
-                        <div class="gallery-info">
-                            <h3 data-i18n="work5_title">云深不知处</h3>
-                            <span data-i18n="work5_artist">白墨 · 2024</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="gallery-item" data-gallery="5">
-                    <div class="gallery-image img6"></div>
-                    <div class="gallery-overlay">
-                        <div class="gallery-info">
-                            <h3 data-i18n="work6_title">空山新雨</h3>
-                            <span data-i18n="work6_artist">白墨 · 2022</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
+<script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-        <!-- About -->
-        <section class="section" id="about">
-            <div class="section-header">
-                <div class="section-tag" data-i18n="about_tag">· 关于 ·</div>
-                <h2 data-i18n="about_title">白墨画的哲学</h2>
-                <div class="line"></div>
-                <p data-i18n="about_desc">在黑暗中寻找光明，于虚无中见真实</p>
-            </div>
-            <div class="about-content">
-                <div class="about-text">
-                    <h3 data-i18n="about_heading">何为白墨画？</h3>
-                    <p data-i18n="about_p1">白墨画源于中国传统水墨画的逆向思考——以白色颜料在深色纸绢上作画。这种独特的艺术形式颠覆了"墨为黑"的固有认知，将留白转化为"留黑"，创造出极具视觉冲击力的艺术效果。</p>
-                    <p data-i18n="about_p2">每一笔白墨都承载着东方美学的精髓：虚实相生、阴阳互济。在深沉的底色之上，白色的笔触如同月光穿透黑夜，展现出一种超然的静谧之美。</p>
-                    <p data-i18n="about_p3">白墨画不仅是一种技法，更是一种哲学——它提醒我们，在最深的黑暗中，光明才最为耀眼。</p>
-                </div>
-                <div class="about-visual">
-                    <div class="about-visual-inner"></div>
-                </div>
-            </div>
-        </section>
+    // DOM 元素
+    const container = document.getElementById('canvas-container');
+    const seedText = document.getElementById('seed-text');
+    const btnRegen = document.getElementById('btn-regen');
+    const btnRandom = document.getElementById('btn-random');
+    const btnReset = document.getElementById('btn-reset');
 
-        <!-- Technique -->
-        <section class="section" id="technique">
-            <div class="section-header">
-                <div class="section-tag" data-i18n="tech_tag">· 技法 ·</div>
-                <h2 data-i18n="tech_title">白墨四法</h2>
-                <div class="line"></div>
-                <p data-i18n="tech_desc">传承与创新并重的白墨艺术技法</p>
-            </div>
-            <div class="technique-list">
-                <div class="technique-item">
-                    <div class="technique-icon">🖌️</div>
-                    <h4 data-i18n="tech1_title">白描勾勒</h4>
-                    <p data-i18n="tech1_desc">以白色细线勾勒物象轮廓，讲究线条的力度与韵律，如同在黑暗中用光线描绘万物。</p>
-                </div>
-                <div class="technique-item">
-                    <div class="technique-icon">💧</div>
-                    <h4 data-i18n="tech2_title">泼白晕染</h4>
-                    <p data-i18n="tech2_desc">将稀释的白色颜料泼洒于深色纸面，任其自然晕散，形成云雾般的效果。</p>
-                </div>
-                <div class="technique-item">
-                    <div class="technique-icon">🪨</div>
-                    <h4 data-i18n="tech3_title">皴擦点染</h4>
-                    <p data-i18n="tech3_desc">借鉴传统山水皴法，以干笔蘸白墨皴擦，表现山石纹理与光影层次。</p>
-                </div>
-                <div class="technique-item">
-                    <div class="technique-icon">✨</div>
-                    <h4 data-i18n="tech4_title">积白成厚</h4>
-                    <p data-i18n="tech4_desc">层层叠加白色墨迹，由浅入深，在深色底上塑造出丰富的白色层次与立体感。</p>
-                </div>
-            </div>
-        </section>
+    // 场景初始化
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('#87ceeb');
+    scene.fog = new THREE.Fog('#b8d8f0', 60, 150);
 
-        <!-- Footer -->
-        <footer class="footer">
-            <div class="footer-grid">
-                <div class="footer-col">
-                    <h5 data-i18n="footer_brand">白墨画工作室</h5>
-                    <p data-i18n="footer_brand_desc">传承东方美学<br>探索白墨艺术</p>
-                </div>
-                <div class="footer-col">
-                    <h5 data-i18n="footer_links">快速链接</h5>
-                    <a href="#gallery" data-i18n="nav_gallery">作品</a>
-                    <a href="#about" data-i18n="nav_about">关于</a>
-                    <a href="#technique" data-i18n="nav_technique">技法</a>
-                </div>
-                <div class="footer-col">
-                    <h5 data-i18n="footer_contact">联系我们</h5>
-                    <p>whiteink@art.com</p>
-                    <p>+86 400-888-0000</p>
-                </div>
-                <div class="footer-col">
-                    <h5 data-i18n="footer_follow">关注我们</h5>
-                    <p>Instagram · 白墨画</p>
-                    <p>WeChat · 白墨艺术</p>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p data-i18n="footer_copyright">© 2024 白墨画 White Ink Art. All rights reserved. 联合国6国语言支持</p>
-            </div>
-        </footer>
-    </div>
+    const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 1, 200);
+    camera.position.set(35, 24, 35);
+    camera.lookAt(0, 5, 0);
 
-    <!-- Modal -->
-    <div class="modal-overlay" id="modalOverlay">
-        <div class="modal-content" id="modalContent">
-            <button class="modal-close" id="modalClose">&times;</button>
-            <div class="modal-visual">白墨</div>
-            <h3 id="modalTitle">作品标题</h3>
-            <div class="modal-artist" id="modalArtist">艺术家</div>
-            <p id="modalDesc">作品描述</p>
-        </div>
-    </div>
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
+    container.appendChild(renderer.domElement);
 
-    <script>
-        // ============ LANGUAGE DATA ============
-        const translations = {
-            zh: {
-                brand: '白墨\u2027画',
-                nav_gallery: '作品',
-                nav_about: '关于',
-                nav_technique: '技法',
-                hero_title: '白墨画',
-                hero_subtitle: '以白为墨 · 以暗为纸 · 东方美学',
-                scroll_discover: '探索',
-                gallery_tag: '· 作品集 ·',
-                gallery_title: '白墨画廊',
-                gallery_desc: '每一笔白墨，都是光影的反转，是静谧中的力量',
-                work1_title: '寒山孤影',
-                work1_artist: '白墨 · 2024',
-                work2_title: '烟波江上',
-                work2_artist: '白墨 · 2023',
-                work3_title: '月出惊山',
-                work3_artist: '白墨 · 2024',
-                work4_title: '松风流水',
-                work4_artist: '白墨 · 2023',
-                work5_title: '云深不知处',
-                work5_artist: '白墨 · 2024',
-                work6_title: '空山新雨',
-                work6_artist: '白墨 · 2022',
-                about_tag: '· 关于 ·',
-                about_title: '白墨画的哲学',
-                about_desc: '在黑暗中寻找光明，于虚无中见真实',
-                about_heading: '何为白墨画？',
-                about_p1: '白墨画源于中国传统水墨画的逆向思考——以白色颜料在深色纸绢上作画。这种独特的艺术形式颠覆了"墨为黑"的固有认知，将留白转化为"留黑"，创造出极具视觉冲击力的艺术效果。',
-                about_p2: '每一笔白墨都承载着东方美学的精髓：虚实相生、阴阳互济。在深沉的底色之上，白色的笔触如同月光穿透黑夜，展现出一种超然的静谧之美。',
-                about_p3: '白墨画不仅是一种技法，更是一种哲学——它提醒我们，在最深的黑暗中，光明才最为耀眼。',
-                tech_tag: '· 技法 ·',
-                tech_title: '白墨四法',
-                tech_desc: '传承与创新并重的白墨艺术技法',
-                tech1_title: '白描勾勒',
-                tech1_desc: '以白色细线勾勒物象轮廓，讲究线条的力度与韵律，如同在黑暗中用光线描绘万物。',
-                tech2_title: '泼白晕染',
-                tech2_desc: '将稀释的白色颜料泼洒于深色纸面，任其自然晕散，形成云雾般的效果。',
-                tech3_title: '皴擦点染',
-                tech3_desc: '借鉴传统山水皴法，以干笔蘸白墨皴擦，表现山石纹理与光影层次。',
-                tech4_title: '积白成厚',
-                tech4_desc: '层层叠加白色墨迹，由浅入深，在深色底上塑造出丰富的白色层次与立体感。',
-                footer_brand: '白墨画工作室',
-                footer_brand_desc: '传承东方美学\n探索白墨艺术',
-                footer_links: '快速链接',
-                footer_contact: '联系我们',
-                footer_follow: '关注我们',
-                footer_copyright: '© 2024 白墨画 White Ink Art. All rights reserved. 联合国6国语言支持',
-                modal_close: '关闭',
-                modal_works: ['寒山孤影', '烟波江上', '月出惊山', '松风流水', '云深不知处', '空山新雨'],
-                modal_artists: ['白墨 · 2024', '白墨 · 2023', '白墨 · 2024', '白墨 · 2023', '白墨 · 2024',
-                '白墨 · 2022'],
-                modal_descs: [
-                    '以白墨勾勒孤峰寒林，深色纸面上的白色线条如同冬夜的霜华，静谧而深远。作品展现了白墨画独特的"以白写意"之美。',
-                    '江面烟波浩渺，白墨晕染出层层雾霭，虚实之间尽显东方山水画的空灵意境。',
-                    '明月从山间升起，白墨的光芒穿透深色背景，营造出"月出惊山鸟"的诗意画面。',
-                    '松涛阵阵，流水潺潺。白墨的笔触如风拂过松枝，在深色纸面上留下灵动的白色韵律。',
-                    '云雾深处，山峦隐现。白墨的层层渲染营造出"只在此山中，云深不知处"的幽远意境。',
-                    '雨后空山，万物清新。白墨的点染技法在此作中达到极致，每一处白色都仿佛带着雨后空气的湿润。'
-                ]
-            },
-            en: {
-                brand: 'White Ink Art',
-                nav_gallery: 'Gallery',
-                nav_about: 'About',
-                nav_technique: 'Technique',
-                hero_title: 'White Ink Art',
-                hero_subtitle: 'White as Ink · Dark as Paper · Eastern Aesthetics',
-                scroll_discover: 'Discover',
-                gallery_tag: '· Gallery ·',
-                gallery_title: 'White Ink Gallery',
-                gallery_desc: 'Each stroke of white ink is a reversal of light and shadow, the power within tranquility',
-                work1_title: 'Solitary Shadow on Cold Mountain',
-                work1_artist: 'White Ink · 2024',
-                work2_title: 'Mist Over the River',
-                work2_artist: 'White Ink · 2023',
-                work3_title: 'Moonrise Startles the Mountains',
-                work3_artist: 'White Ink · 2024',
-                work4_title: 'Pine Wind & Flowing Water',
-                work4_artist: 'White Ink · 2023',
-                work5_title: 'Deep in the Clouds',
-                work5_artist: 'White Ink · 2024',
-                work6_title: 'Fresh Rain in Empty Mountains',
-                work6_artist: 'White Ink · 2022',
-                about_tag: '· About ·',
-                about_title: 'Philosophy of White Ink Art',
-                about_desc: 'Seeking light in darkness, finding truth in the void',
-                about_heading: 'What is White Ink Art?',
-                about_p1: 'White Ink Art originates from a reverse thinking of traditional Chinese ink painting—using white pigment on dark paper or silk. This unique art form overturns the固有 notion that "ink is black," transforming "blank space" into "dark space," creating visually striking artistic effects.',
-                about_p2: 'Each stroke of white ink carries the essence of Eastern aesthetics: the interplay of void and substance, the harmony of yin and yang. Upon the deep background, white brushstrokes are like moonlight piercing through the night, revealing a transcendent beauty of tranquility.',
-                about_p3: 'White Ink Art is not merely a technique but a philosophy—it reminds us that in the deepest darkness, light shines most brilliantly.',
-                tech_tag: '· Technique ·',
-                tech_title: 'Four Methods of White Ink',
-                tech_desc: 'White ink techniques balancing tradition and innovation',
-                tech1_title: 'White Line Drawing',
-                tech1_desc: 'Outlining forms with fine white lines, emphasizing the strength and rhythm of the stroke, like tracing all things with light in the darkness.',
-                tech2_title: 'White Splash & Wash',
-                tech2_desc: 'Splashing diluted white pigment onto dark paper, allowing it to spread naturally, forming cloud-like effects.',
-                tech3_title: 'Texture Stroke & Dotting',
-                tech3_desc: 'Drawing from traditional landscape texturing methods, using a dry brush with white ink to depict rock textures and light layers.',
-                tech4_title: 'Layered White Buildup',
-                tech4_desc: 'Layer upon layer of white ink, from light to deep, building rich white gradations and three-dimensionality on the dark ground.',
-                footer_brand: 'White Ink Studio',
-                footer_brand_desc: 'Preserving Eastern aesthetics\nExploring white ink art',
-                footer_links: 'Quick Links',
-                footer_contact: 'Contact Us',
-                footer_follow: 'Follow Us',
-                footer_copyright: '© 2024 White Ink Art. All rights reserved. UN 6-language support',
-                modal_close: 'Close',
-                modal_works: ['Solitary Shadow on Cold Mountain', 'Mist Over the River',
-                    'Moonrise Startles the Mountains', 'Pine Wind & Flowing Water', 'Deep in the Clouds',
-                    'Fresh Rain in Empty Mountains'
-                ],
-                modal_artists: ['White Ink · 2024', 'White Ink · 2023', 'White Ink · 2024', 'White Ink · 2023',
-                    'White Ink · 2024', 'White Ink · 2022'
-                ],
-                modal_descs: [
-                    'White ink outlines solitary peaks and cold forests, the white lines on dark paper like frost flowers on a winter night—serene and profound. The work showcases the unique beauty of "writing meaning with white."',
-                    'Mist stretches across the river surface, white ink washes forming layers of haze, the ethereal spirit of Eastern landscape painting revealed between void and substance.',
-                    'The moon rises among the mountains, white ink\'s radiance piercing through the dark background, creating the poetic scene of "moonrise startles the mountain birds."',
-                    'Pine winds sigh, waters flow gently. White ink strokes like wind brushing through pine branches, leaving lively white rhythms on the dark paper.',
-                    'Deep in the clouds, mountain ridges emerge faintly. Layer upon layer of white ink rendering creates the secluded意境 of "only in these mountains, deep in clouds unknown."',
-                    'After rain, the empty mountains feel fresh and renewed. The dotting technique of white ink reaches its pinnacle here, each white spot seemingly carrying the moisture of post-rain air.'
-                ]
-            },
-            fr: {
-                brand: 'Art d\'Encre Blanche',
-                nav_gallery: 'Galerie',
-                nav_about: 'À Propos',
-                nav_technique: 'Technique',
-                hero_title: 'Art d\'Encre Blanche',
-                hero_subtitle: 'Blanc comme Encre · Sombre comme Papier · Esthétique Orientale',
-                scroll_discover: 'Découvrir',
-                gallery_tag: '· Galerie ·',
-                gallery_title: 'Galerie d\'Encre Blanche',
-                gallery_desc: 'Chaque trait d\'encre blanche est un renversement de la lumière et de l\'ombre, la force dans la tranquillité',
-                work1_title: 'Ombre Solitaire sur Montagne Froide',
-                work1_artist: 'Encre Blanche · 2024',
-                work2_title: 'Brume sur la Rivière',
-                work2_artist: 'Encre Blanche · 2023',
-                work3_title: 'Lever de Lune sur les Monts',
-                work3_artist: 'Encre Blanche · 2024',
-                work4_title: 'Vent de Pin & Eau Courante',
-                work4_artist: 'Encre Blanche · 2023',
-                work5_title: 'Au Cœur des Nuages',
-                work5_artist: 'Encre Blanche · 2024',
-                work6_title: 'Pluie Fraîche en Montagne Vide',
-                work6_artist: 'Encre Blanche · 2022',
-                about_tag: '· À Propos ·',
-                about_title: 'Philosophie de l\'Encre Blanche',
-                about_desc: 'Chercher la lumière dans l\'obscurité, trouver la vérité dans le vide',
-                about_heading: 'Qu\'est-ce que l\'Art d\'Encre Blanche?',
-                about_p1: 'L\'Art d\'Encre Blanche naît d\'une réflexion inversée de la peinture à l\'encre chinoise traditionnelle—utiliser un pigment blanc sur du papier ou de la soie foncés. Cette forme d\'art unique renverse la notion que "l\'encre est noire", transformant "l\'espace blanc" en "espace noir".',
-                about_p2: 'Chaque trait d\'encre blanche porte l\'essence de l\'esthétique orientale : le jeu du vide et de la substance, l\'harmonie du yin et du yang. Sur le fond profond, les coups de pinceau blancs sont comme le clair de lune perçant la nuit.',
-                about_p3: 'L\'Art d\'Encre Blanche n\'est pas seulement une technique mais une philosophie—il nous rappelle que dans l\'obscurité la plus profonde, la lumière brille le plus intensément.',
-                tech_tag: '· Technique ·',
-                tech_title: 'Quatre Méthodes d\'Encre Blanche',
-                tech_desc: 'Techniques d\'encre blanche alliant tradition et innovation',
-                tech1_title: 'Dessin au Trait Blanc',
-                tech1_desc: 'Esquisser les formes avec de fines lignes blanches, en mettant l\'accent sur la force et le rythme du trait, comme tracer toutes choses avec la lumière dans l\'obscurité.',
-                tech2_title: 'Éclaboussure & Lavis Blanc',
-                tech2_desc: 'Projeter du pigment blanc dilué sur du papier foncé, le laissant se répandre naturellement, formant des effets nuageux.',
-                tech3_title: 'Frottis & Pointillisme',
-                tech3_desc: 'S\'inspirant des méthodes de texture traditionnelles, utiliser un pinceau sec à l\'encre blanche pour représenter les textures rocheuses et les couches de lumière.',
-                tech4_title: 'Accumulation Blanche',
-                tech4_desc: 'Superposer couche après couche d\'encre blanche, du clair au profond, créant de riches gradations blanches et de la tridimensionnalité.',
-                footer_brand: 'Studio Encre Blanche',
-                footer_brand_desc: 'Préserver l\'esthétique orientale\nExplorer l\'art de l\'encre blanche',
-                footer_links: 'Liens Rapides',
-                footer_contact: 'Contactez-Nous',
-                footer_follow: 'Suivez-Nous',
-                footer_copyright: '© 2024 Art d\'Encre Blanche. Tous droits réservés. Support 6 langues ONU',
-                modal_close: 'Fermer',
-                modal_works: ['Ombre Solitaire sur Montagne Froide', 'Brume sur la Rivière',
-                    'Lever de Lune sur les Monts', 'Vent de Pin & Eau Courante', 'Au Cœur des Nuages',
-                    'Pluie Fraîche en Montagne Vide'
-                ],
-                modal_artists: ['Encre Blanche · 2024', 'Encre Blanche · 2023', 'Encre Blanche · 2024',
-                    'Encre Blanche · 2023', 'Encre Blanche · 2024', 'Encre Blanche · 2022'
-                ],
-                modal_descs: [
-                    'L\'encre blanche dessine des pics solitaires et des forêts froides, les lignes blanches sur papier foncé comme des fleurs de givre par une nuit d\'hiver—sereines et profondes.',
-                    'La brume s\'étend sur la rivière, les lavis d\'encre blanche formant des couches de brume, l\'esprit éthéré de la peinture de paysage orientale.',
-                    'La lune se lève parmi les montagnes, la radiance de l\'encre blanche perçant le fond sombre, créant une scène poétique.',
-                    'Les vents de pin soupirent, les eaux coulent doucement. Les traits d\'encre blanche comme le vent traversant les branches de pin.',
-                    'Au cœur des nuages, les crêtes montagneuses émergent faiblement. Couche après couche d\'encre blanche crée une atmosphère de recueillement.',
-                    'Après la pluie, les montagnes vides semblent fraîches et renouvelées. La technique du pointillisme à l\'encre blanche atteint ici son apogée.'
-                ]
-            },
-            ru: {
-                brand: 'Белая Тушь',
-                nav_gallery: 'Галерея',
-                nav_about: 'О нас',
-                nav_technique: 'Техника',
-                hero_title: 'Белая Тушь',
-                hero_subtitle: 'Белое как Тушь · Тёмное как Бумага · Восточная Эстетика',
-                scroll_discover: 'Открыть',
-                gallery_tag: '· Галерея ·',
-                gallery_title: 'Галерея Белой Туши',
-                gallery_desc: 'Каждый штрих белой туши — это обращение света и тени, сила в спокойствии',
-                work1_title: 'Одинокая Тень на Холодной Горе',
-                work1_artist: 'Белая Тушь · 2024',
-                work2_title: 'Туман над Рекой',
-                work2_artist: 'Белая Тушь · 2023',
-                work3_title: 'Восход Луны над Горами',
-                work3_artist: 'Белая Тушь · 2024',
-                work4_title: 'Сосновый Ветер и Текучая Вода',
-                work4_artist: 'Белая Тушь · 2023',
-                work5_title: 'Глубоко в Облаках',
-                work5_artist: 'Белая Тушь · 2024',
-                work6_title: 'Свежий Дождь в Пустых Горах',
-                work6_artist: 'Белая Тушь · 2022',
-                about_tag: '· О нас ·',
-                about_title: 'Философия Белой Туши',
-                about_desc: 'Искать свет во тьме, находить истину в пустоте',
-                about_heading: 'Что такое искусство белой туши?',
-                about_p1: 'Искусство белой туши возникло из обратного мышления традиционной китайской живописи тушью — использование белого пигмента на тёмной бумаге или шёлке. Эта уникальная форма искусства переворачивает представление о том, что "тушь черна".',
-                about_p2: 'Каждый штрих белой туши несёт суть восточной эстетики: взаимодействие пустоты и substance, гармонию инь и ян. На глубоком фоне белые мазки подобны лунному свету, пронзающему ночь.',
-                about_p3: 'Искусство белой туши — это не только техника, но и философия — оно напоминает нам, что в самой глубокой тьме свет сияет ярче всего.',
-                tech_tag: '· Техника ·',
-                tech_title: 'Четыре Метода Белой Туши',
-                tech_desc: 'Техники белой туши, сочетающие традиции и инновации',
-                tech1_title: 'Белый Контурный Рисунок',
-                tech1_desc: 'Обрисовка форм тонкими белыми линиями, с акцентом на силу и ритм штриха, словно очерчивая всё светом во тьме.',
-                tech2_title: 'Белые Брызги и Размывка',
-                tech2_desc: 'Разбрызгивание разбавленного белого пигмента по тёмной бумаге, позволяя ему растекаться естественно, создавая эффекты облаков.',
-                tech3_title: 'Фактурный Штрих и Точечная Техника',
-                tech3_desc: 'Используя традиционные методы текстурирования пейзажа, сухой кистью с белой тушью для изображения текстур скал и слоёв света.',
-                tech4_title: 'Многослойное Белое Наращивание',
-                tech4_desc: 'Слой за слоем белой туши, от светлого к глубокому, создавая богатые белые градации и трёхмерность на тёмном фоне.',
-                footer_brand: 'Студия Белой Туши',
-                footer_brand_desc: 'Сохраняя восточную эстетику\nИсследуя искусство белой туши',
-                footer_links: 'Быстрые Ссылки',
-                footer_contact: 'Свяжитесь с Нами',
-                footer_follow: 'Подписывайтесь',
-                footer_copyright: '© 2024 Искусство Белой Туши. Все права защищены. Поддержка 6 языков ООН',
-                modal_close: 'Закрыть',
-                modal_works: ['Одинокая Тень на Холодной Горе', 'Туман над Рекой', 'Восход Луны над Горами',
-                    'Сосновый Ветер и Текучая Вода', 'Глубоко в Облаках', 'Свежий Дождь в Пустых Горах'
-                ],
-                modal_artists: ['Белая Тушь · 2024', 'Белая Тушь · 2023', 'Белая Тушь · 2024', 'Белая Тушь · 2023',
-                    'Белая Тушь · 2024', 'Белая Тушь · 2022'
-                ],
-                modal_descs: [
-                    'Белая тушь очерчивает одинокие пики и холодные леса, белые линии на тёмной бумаге словно иней в зимнюю ночь — безмятежно и глубоко.',
-                    'Туман простирается над рекой, белые размывки образуют слои дымки, эфирный дух восточной пейзажной живописи.',
-                    'Луна восходит среди гор, сияние белой туши пронзает тёмный фон, создавая поэтическую сцену.',
-                    'Сосновые ветры вздыхают, воды текут нежно. Штрихи белой туши словно ветер, проходящий сквозь сосновые ветви.',
-                    'Глубоко в облаках горные хребты emerge faintly. Слой за слоем белая тушь создаёт атмосферу уединения.',
-                    'После дождя пустые горы кажутся свежими и обновлёнными. Техника точечной белой туши достигает здесь своего апогея.'
-                ]
-            },
-            ar: {
-                brand: 'فن الحبر الأبيض',
-                nav_gallery: 'المعرض',
-                nav_about: 'حول',
-                nav_technique: 'التقنية',
-                hero_title: 'فن الحبر الأبيض',
-                hero_subtitle: 'الأبيض كحبر · الداكن كورق · الجماليات الشرقية',
-                scroll_discover: 'اكتشف',
-                gallery_tag: '· المعرض ·',
-                gallery_title: 'معرض الحبر الأبيض',
-                gallery_desc: 'كل ضربة من الحبر الأبيض هي انعكاس للضوء والظل، القوة في الهدوء',
-                work1_title: 'ظل وحيد على جبل بارد',
-                work1_artist: 'الحبر الأبيض · 2024',
-                work2_title: 'ضباب فوق النهر',
-                work2_artist: 'الحبر الأبيض · 2023',
-                work3_title: 'طلوع القمر يذهل الجبال',
-                work3_artist: 'الحبر الأبيض · 2024',
-                work4_title: 'رياح الصنوبر والمياه الجارية',
-                work4_artist: 'الحبر الأبيض · 2023',
-                work5_title: 'عميق في السحاب',
-                work5_artist: 'الحبر الأبيض · 2024',
-                work6_title: 'مطر منعش في جبال فارغة',
-                work6_artist: 'الحبر الأبيض · 2022',
-                about_tag: '· حول ·',
-                about_title: 'فلسفة الحبر الأبيض',
-                about_desc: 'البحث عن النور في الظلام، إيجاد الحقيقة في الفراغ',
-                about_heading: 'ما هو فن الحبر الأبيض؟',
-                about_p1: 'نشأ فن الحبر الأبيض من تفكير عكسي للرسم الصيني التقليدي بالحبر — استخدام صبغة بيضاء على ورق داكن أو حرير. هذا الشكل الفني الفريد يقلب الفكرة السائدة بأن "الحبر أسود".',
-                about_p2: 'كل ضربة من الحبر الأبيض تحمل جوهر الجماليات الشرقية: تفاعل الفراغ والمادة، انسجام الين واليانغ. على الخلفية العميقة، ضربات الفرشاة البيضاء مثل ضوء القمر يخترق الليل.',
-                about_p3: 'فن الحبر الأبيض ليس مجرد تقنية بل فلسفة — إنه يذكرنا أنه في أعمق الظلام، يلمع النور بأقصى درجات السطوع.',
-                tech_tag: '· التقنية ·',
-                tech_title: 'الطرق الأربع للحبر الأبيض',
-                tech_desc: 'تقنيات الحبر الأبيض التي توازن بين التقاليد والابتكار',
-                tech1_title: 'الرسم بالخط الأبيض',
-                tech1_desc: 'تحديد الأشكال بخطوط بيضاء دقيقة، مع التركيز على قوة وإيقاع الضربة، مثل تتبع كل شيء بالضوء في الظلام.',
-                tech2_title: 'الرش والغسل الأبيض',
-                tech2_desc: 'رش صبغة بيضاء مخففة على ورق داكن، وتركها تنتشر بشكل طبيعي، لتشكيل تأثيرات تشبه السحاب.',
-                tech3_title: 'ضربات الملمس والتنقيط',
-                tech3_desc: 'بالاستفادة من طرق تنسيج المناظر الطبيعية التقليدية، باستخدام فرشاة جافة بالحبر الأبيض لتصوير قوام الصخور وطبقات الضوء.',
-                tech4_title: 'التراكم الأبيض الطبقي',
-                tech4_desc: 'طبقة فوق طبقة من الحبر الأبيض، من الفاتح إلى العميق، لبناء تدرجات بيضاء غنية وثلاثية الأبعاد على الأرضية الداكنة.',
-                footer_brand: 'استوديو الحبر الأبيض',
-                footer_brand_desc: 'الحفاظ على الجماليات الشرقية\nاستكشاف فن الحبر الأبيض',
-                footer_links: 'روابط سريعة',
-                footer_contact: 'اتصل بنا',
-                footer_follow: 'تابعنا',
-                footer_copyright: '© 2024 فن الحبر الأبيض. جميع الحقوق محفوظة. دعم 6 لغات للأمم المتحدة',
-                modal_close: 'إغلاق',
-                modal_works: ['ظل وحيد على جبل بارد', 'ضباب فوق النهر', 'طلوع القمر يذهل الجبال',
-                    'رياح الصنوبر والمياه الجارية', 'عميق في السحاب', 'مطر منعش في جبال فارغة'
-                ],
-                modal_artists: ['الحبر الأبيض · 2024', 'الحبر الأبيض · 2023', 'الحبر الأبيض · 2024', 'الحبر الأبيض · 2023',
-                    'الحبر الأبيض · 2024', 'الحبر الأبيض · 2022'
-                ],
-                modal_descs: [
-                    'يحدد الحبر الأبيض القمم المنعزلة والغابات الباردة، الخطوط البيضاء على الورق الداكن مثل أزهار الصقيع في ليلة شتوية — هادئة وعميقة.',
-                    'يمتد الضباب عبر سطح النهر، تشكل غسلات الحبر الأبيض طبقات من الضباب، الروح الأثيرية للرسم الشرقي للمناظر الطبيعية.',
-                    'يشرق القمر بين الجبال، يخترق إشعاع الحبر الأبيض الخلفية الداكنة، ليخلق مشهدًا شعريًا.',
-                    'تنهد رياح الصنوبر، وتتدفق المياه بلطف. ضربات الحبر الأبيض مثل الريح التي تمر عبر أغصان الصنوبر.',
-                    'عميقًا في السحاب، تظهر قمم الجبال بخفوت. طبقة فوق طبقة من الحبر الأبيض تخلق جوًا من العزلة.',
-                    'بعد المطر، تبدو الجبال الفارغة منعشة ومتجددة. تصل تقنية التنقيط بالحبر الأبيض إلى ذروتها هنا.'
-                ]
-            },
-            es: {
-                brand: 'Arte de Tinta Blanca',
-                nav_gallery: 'Galería',
-                nav_about: 'Acerca',
-                nav_technique: 'Técnica',
-                hero_title: 'Arte de Tinta Blanca',
-                hero_subtitle: 'Blanco como Tinta · Oscuro como Papel · Estética Oriental',
-                scroll_discover: 'Descubrir',
-                gallery_tag: '· Galería ·',
-                gallery_title: 'Galería de Tinta Blanca',
-                gallery_desc: 'Cada trazo de tinta blanca es una inversión de luz y sombra, el poder en la tranquilidad',
-                work1_title: 'Sombra Solitaria en Montaña Fría',
-                work1_artist: 'Tinta Blanca · 2024',
-                work2_title: 'Niebla Sobre el Río',
-                work2_artist: 'Tinta Blanca · 2023',
-                work3_title: 'Salida de Luna Sorprende las Montañas',
-                work3_artist: 'Tinta Blanca · 2024',
-                work4_title: 'Viento de Pino y Agua Fluente',
-                work4_artist: 'Tinta Blanca · 2023',
-                work5_title: 'Profundo en las Nubes',
-                work5_artist: 'Tinta Blanca · 2024',
-                work6_title: 'Lluvia Fresca en Montañas Vacías',
-                work6_artist: 'Tinta Blanca · 2022',
-                about_tag: '· Acerca ·',
-                about_title: 'Filosofía de la Tinta Blanca',
-                about_desc: 'Buscar la luz en la oscuridad, encontrar la verdad en el vacío',
-                about_heading: '¿Qué es el Arte de Tinta Blanca?',
-                about_p1: 'El Arte de Tinta Blanca surge de un pensamiento inverso de la pintura china tradicional con tinta: usar pigmento blanco sobre papel oscuro o seda. Esta forma de arte única invierte la noción de que "la tinta es negra".',
-                about_p2: 'Cada trazo de tinta blanca lleva la esencia de la estética oriental: la interacción del vacío y la sustancia, la armonía del yin y el yang. Sobre el fondo profundo, las pinceladas blancas son como la luz de la luna atravesando la noche.',
-                about_p3: 'El Arte de Tinta Blanca no es solo una técnica sino una filosofía: nos recuerda que en la oscuridad más profunda, la luz brilla con mayor intensidad.',
-                tech_tag: '· Técnica ·',
-                tech_title: 'Cuatro Métodos de Tinta Blanca',
-                tech_desc: 'Técnicas de tinta blanca que equilibran tradición e innovación',
-                tech1_title: 'Dibujo de Línea Blanca',
-                tech1_desc: 'Delinear formas con finas líneas blancas, enfatizando la fuerza y el ritmo del trazo, como trazar todas las cosas con luz en la oscuridad.',
-                tech2_title: 'Salpicadura y Lavado Blanco',
-                tech2_desc: 'Salpicar pigmento blanco diluido sobre papel oscuro, dejándolo extenderse naturalmente, formando efectos similares a nubes.',
-                tech3_title: 'Trazo de Textura y Punteado',
-                tech3_desc: 'Inspirándose en métodos tradicionales de texturizado de paisajes, usando un pincel seco con tinta blanca para representar texturas de roca y capas de luz.',
-                tech4_title: 'Acumulación Blanca en Capas',
-                tech4_desc: 'Capa sobre capa de tinta blanca, de claro a profundo, construyendo ricas gradaciones blancas y tridimensionalidad sobre el fondo oscuro.',
-                footer_brand: 'Estudio de Tinta Blanca',
-                footer_brand_desc: 'Preservando la estética oriental\nExplorando el arte de tinta blanca',
-                footer_links: 'Enlaces Rápidos',
-                footer_contact: 'Contáctenos',
-                footer_follow: 'Síguenos',
-                footer_copyright: '© 2024 Arte de Tinta Blanca. Todos los derechos reservados. Soporte 6 idiomas ONU',
-                modal_close: 'Cerrar',
-                modal_works: ['Sombra Solitaria en Montaña Fría', 'Niebla Sobre el Río',
-                    'Salida de Luna Sorprende las Montañas', 'Viento de Pino y Agua Fluente',
-                    'Profundo en las Nubes', 'Lluvia Fresca en Montañas Vacías'
-                ],
-                modal_artists: ['Tinta Blanca · 2024', 'Tinta Blanca · 2023', 'Tinta Blanca · 2024', 'Tinta Blanca · 2023',
-                    'Tinta Blanca · 2024', 'Tinta Blanca · 2022'
-                ],
-                modal_descs: [
-                    'La tinta blanca delinea picos solitarios y bosques fríos, las líneas blancas sobre papel oscuro como flores de escarcha en una noche de invierno—serenas y profundas.',
-                    'La niebla se extiende sobre el río, los lavados de tinta blanca formando capas de bruma, el espíritu etéreo de la pintura de paisaje oriental.',
-                    'La luna sale entre las montañas, el resplandor de la tinta blanca atravesando el fondo oscuro, creando una escena poética.',
-                    'Los vientos de pino suspiran, las aguas fluyen suavemente. Los trazos de tinta blanca como el viento atravesando las ramas de pino.',
-                    'Profundo en las nubes, las crestas montañosas emergen débilmente. Capa tras capa de tinta blanca crea una atmósfera de recogimiento.',
-                    'Después de la lluvia, las montañas vacías se sienten frescas y renovadas. La técnica de punteado con tinta blanca alcanza aquí su punto máximo.'
-                ]
-            }
+    // 控制器
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 6, 0);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.12;
+    controls.minDistance = 6;
+    controls.maxDistance = 70;
+    controls.maxPolarAngle = Math.PI * 0.52;
+    controls.minPolarAngle = 0.15;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.25;
+    controls.update();
+
+    // 光照
+    scene.add(new THREE.AmbientLight('#8899bb', 1.6));
+    scene.add(new THREE.HemisphereLight('#ffeeb1', '#446688', 0.9));
+    const sunLight = new THREE.DirectionalLight('#fff8e7', 3.8);
+    sunLight.position.set(25, 35, 15);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 2048;
+    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.camera.near = 0.5;
+    sunLight.shadow.camera.far = 120;
+    sunLight.shadow.camera.left = -40;
+    sunLight.shadow.camera.right = 40;
+    sunLight.shadow.camera.top = 40;
+    sunLight.shadow.camera.bottom = -40;
+    sunLight.shadow.bias = -0.0003;
+    sunLight.shadow.normalBias = 0.02;
+    scene.add(sunLight);
+
+    // 噪声函数
+    function hash2D(x, z, seed) {
+        const n = Math.sin(x * 127.1 + z * 311.7 + seed * 43758.5453) * 43758.5453;
+        return n - Math.floor(n);
+    }
+    function smoothNoise2D(x, z, seed) {
+        const ix = Math.floor(x), iz = Math.floor(z);
+        const fx = x - ix, fz = z - iz;
+        const sx = fx * fx * (3 - 2 * fx), sz = fz * fz * (3 - 2 * fz);
+        const v00 = hash2D(ix, iz, seed), v10 = hash2D(ix + 1, iz, seed);
+        const v01 = hash2D(ix, iz + 1, seed), v11 = hash2D(ix + 1, iz + 1, seed);
+        const a = v00 + (v10 - v00) * sx, b = v01 + (v11 - v01) * sx;
+        return a + (b - a) * sz;
+    }
+    function fbmNoise(x, z, seed, octaves = 6) {
+        let value = 0, amplitude = 1, frequency = 1, maxVal = 0;
+        for (let i = 0; i < octaves; i++) {
+            value += amplitude * smoothNoise2D(x * frequency, z * frequency, seed + i * 1000);
+            maxVal += amplitude;
+            amplitude *= 0.5;
+            frequency *= 2.0;
+        }
+        return value / maxVal;
+    }
+    function moistureNoise(x, z, seed) {
+        return fbmNoise(x * 0.7 + 5.3, z * 0.7 - 3.1, seed + 50000, 4);
+    }
+
+    const TERRAIN_SIZE = 42;
+    const HALF_SIZE = TERRAIN_SIZE / 2;
+    const WATER_LEVEL = 3;
+    const SNOW_LINE = 15;
+    const STONE_LINE = 12;
+
+    // 方块类型（新增矿石）
+    const BlockTypes = {
+        BEDROCK: 'bedrock',
+        STONE: 'stone',
+        DIRT: 'dirt',
+        GRASS: 'grass',
+        SAND: 'sand',
+        SNOW: 'snow',
+        WATER: 'water',
+        WOOD: 'wood',
+        LEAVES: 'leaves',
+        FLOWER: 'flower',
+        CLOUD: 'cloud',
+        COAL_ORE: 'coal_ore',
+        IRON_ORE: 'iron_ore',
+    };
+
+    const blockColors = {
+        [BlockTypes.BEDROCK]: '#3d3d3d',
+        [BlockTypes.STONE]: '#6b6b6b',
+        [BlockTypes.DIRT]: '#8b6914',
+        [BlockTypes.GRASS]: '#7ec850',
+        [BlockTypes.SAND]: '#c2a64b',
+        [BlockTypes.SNOW]: '#f5f5f0',
+        [BlockTypes.WATER]: '#4488cc',
+        [BlockTypes.WOOD]: '#7d5e3b',
+        [BlockTypes.LEAVES]: '#3d7a3d',
+        [BlockTypes.CLOUD]: '#fafeff',
+        [BlockTypes.COAL_ORE]: '#444444',
+        [BlockTypes.IRON_ORE]: '#d4a373',
+    };
+
+    const blockMaterialPresets = {
+        [BlockTypes.WATER]: { transparent: true, opacity: 0.7, roughness: 0.2 },
+        [BlockTypes.CLOUD]: { transparent: true, opacity: 0.85, roughness: 0.3 },
+        [BlockTypes.SNOW]: { roughness: 0.5 },
+        [BlockTypes.GRASS]: { roughness: 0.8 },
+        [BlockTypes.SAND]: { roughness: 0.9 },
+        [BlockTypes.DIRT]: { roughness: 0.85 },
+        [BlockTypes.STONE]: { roughness: 0.7 },
+        [BlockTypes.BEDROCK]: { roughness: 0.6 },
+        [BlockTypes.WOOD]: { roughness: 0.75 },
+        [BlockTypes.LEAVES]: { roughness: 0.7 },
+        [BlockTypes.COAL_ORE]: { roughness: 0.65 },
+        [BlockTypes.IRON_ORE]: { roughness: 0.6, metalness: 0.2 },
+    };
+
+    let terrainMeshes = [];
+    const sharedGeometry = new THREE.BoxGeometry(1, 1, 1);
+
+    // 伪随机数生成器
+    function mulberry32(a) {
+        return function() {
+            a |= 0; a = (a + 0x6d2b79f5) | 0;
+            let t = Math.imul(a ^ (a >>> 15), 1 | a);
+            t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
         };
+    }
 
-        // RTL languages
-        const rtlLanguages = ['ar'];
+    // 收集方块数据（全新生物群系规则）
+    function collectBlocks(seed) {
+        const blockMap = new Map();
+        for (const type of Object.values(BlockTypes)) blockMap.set(type, []);
+        const surfaceInfo = [];
 
-        let currentLang = 'zh';
+        for (let ix = 0; ix < TERRAIN_SIZE; ix++) {
+            for (let iz = 0; iz < TERRAIN_SIZE; iz++) {
+                const worldX = ix - HALF_SIZE;
+                const worldZ = iz - HALF_SIZE;
 
-        // ============ APPLY TRANSLATION ============
-        function applyTranslation(lang) {
-            currentLang = lang;
-            const t = translations[lang];
-            if (!t) return;
+                const noiseVal = fbmNoise(worldX * 0.12, worldZ * 0.12, seed, 7);
+                const rawHeight = noiseVal * 9 + 7;
+                const height = Math.max(1, Math.min(19, Math.round(rawHeight)));
 
-            // Update all elements with data-i18n
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.getAttribute('data-i18n');
-                if (t[key]) {
-                    el.textContent = t[key];
-                }
-            });
+                const moisture = moistureNoise(worldX, worldZ, seed);
+                const moistNorm = (moisture + 1) / 2; // 0~1
 
-            // Update brand specifically (might have special formatting)
-            const brandEl = document.querySelector('[data-i18n="brand"]');
-            if (brandEl && t['brand']) {
-                if (lang === 'zh') {
-                    brandEl.innerHTML = '白墨<span class="dot"></span>画';
+                // 修正生物群系：大部分区域都是草地，只有极低湿度才是沙漠，高海拔为岩石/雪
+                let surfaceType;
+                if (height <= WATER_LEVEL + 1) {
+                    surfaceType = BlockTypes.SAND; // 海滩
+                } else if (height >= SNOW_LINE) {
+                    surfaceType = BlockTypes.SNOW;
+                } else if (height >= STONE_LINE) {
+                    surfaceType = BlockTypes.STONE;
+                } else if (moistNorm < 0.15) {
+                    surfaceType = BlockTypes.SAND; // 沙漠（极低湿度）
                 } else {
-                    brandEl.textContent = t['brand'];
-                    // Re-add dot for visual consistency
-                    if (!brandEl.querySelector('.dot')) {
-                        const dot = document.createElement('span');
-                        dot.className = 'dot';
-                        brandEl.appendChild(dot);
+                    surfaceType = BlockTypes.GRASS; // 默认草地
+                }
+
+                // 基岩
+                blockMap.get(BlockTypes.BEDROCK).push({ x: worldX, y: 0, z: worldZ });
+
+                // 地下层：石头（带矿石）和泥土
+                const stoneTop = Math.max(1, height - 4); // 更多泥土层
+                for (let y = 1; y < stoneTop; y++) {
+                    // 在石头层中随机放置矿石
+                    const oreRng = mulberry32(seed + worldX * 1000 + worldZ * 100 + y * 10);
+                    const oreChance = oreRng();
+                    if (oreChance < 0.06) {
+                        blockMap.get(BlockTypes.COAL_ORE).push({ x: worldX, y, z: worldZ });
+                    } else if (oreChance < 0.09) {
+                        blockMap.get(BlockTypes.IRON_ORE).push({ x: worldX, y, z: worldZ });
+                    } else {
+                        blockMap.get(BlockTypes.STONE).push({ x: worldX, y, z: worldZ });
+                    }
+                }
+                // 泥土层（stoneTop 到 height-1）
+                for (let y = stoneTop; y < height; y++) {
+                    blockMap.get(BlockTypes.DIRT).push({ x: worldX, y, z: worldZ });
+                }
+                // 表面
+                blockMap.get(surfaceType).push({ x: worldX, y: height, z: worldZ });
+
+                // 水
+                if (height < WATER_LEVEL) {
+                    blockMap.get(BlockTypes.WATER).push({ x: worldX, y: WATER_LEVEL, z: worldZ });
+                }
+
+                surfaceInfo.push({ x: worldX, z: worldZ, height, surfaceType, moisture: moistNorm });
+            }
+        }
+        return { blockMap, surfaceInfo };
+    }
+
+    // 树木生成（提高概率）
+    function placeTrees(blockMap, surfaceInfo, seed) {
+        const rng = mulberry32(seed + 77777);
+        for (const info of surfaceInfo) {
+            const { x, z, height, surfaceType, moisture } = info;
+            if (surfaceType !== BlockTypes.GRASS) continue;
+            if (height < WATER_LEVEL + 2) continue;
+            if (moisture < 0.2) continue; // 放宽湿度限制
+
+            if (rng() > 0.18) continue; // 18% 概率生成树
+
+            const trunkHeight = 2 + Math.floor(rng() * 4);
+            const trunkBase = height + 1;
+            const trunkTop = height + trunkHeight;
+            for (let ty = trunkBase; ty <= trunkTop; ty++) {
+                blockMap.get(BlockTypes.WOOD).push({ x, y: ty, z });
+            }
+
+            const crownBase = trunkTop;
+            for (let dx = -1; dx <= 1; dx++) {
+                for (let dz = -1; dz <= 1; dz++) {
+                    if (dx === 0 && dz === 0) continue;
+                    blockMap.get(BlockTypes.LEAVES).push({ x: x + dx, y: crownBase, z: z + dz });
+                }
+            }
+            const crownTop = crownBase + 1;
+            for (let dx = -1; dx <= 1; dx++) {
+                for (let dz = -1; dz <= 1; dz++) {
+                    if (Math.abs(dx) === 1 && Math.abs(dz) === 1 && rng() > 0.5) continue;
+                    blockMap.get(BlockTypes.LEAVES).push({ x: x + dx, y: crownTop, z: z + dz });
+                }
+            }
+            if (rng() > 0.4) {
+                blockMap.get(BlockTypes.LEAVES).push({ x, y: crownTop + 1, z });
+                if (rng() > 0.5) blockMap.get(BlockTypes.LEAVES).push({ x: x + 1, y: crownTop + 1, z });
+                if (rng() > 0.5) blockMap.get(BlockTypes.LEAVES).push({ x: x - 1, y: crownTop + 1, z });
+            }
+        }
+    }
+
+    // 花朵生成（提高密度）
+    function placeFlowers(blockMap, surfaceInfo, seed) {
+        const rng = mulberry32(seed + 99999);
+        const flowerColors = [
+            new THREE.Color('#ff6b6b'), new THREE.Color('#ffd93d'), new THREE.Color('#ff922b'),
+            new THREE.Color('#f06595'), new THREE.Color('#e599f7'), new THREE.Color('#ffffff'),
+            new THREE.Color('#51cf66'), new THREE.Color('#74c0fc'),
+        ];
+        for (const info of surfaceInfo) {
+            const { x, z, height, surfaceType } = info;
+            if (surfaceType !== BlockTypes.GRASS) continue;
+            if (height < WATER_LEVEL + 1) continue;
+            if (rng() > 0.08) continue; // 8% 概率生成花
+            const color = flowerColors[Math.floor(rng() * flowerColors.length)];
+            blockMap.get(BlockTypes.FLOWER).push({ x, y: height + 1, z, color });
+        }
+    }
+
+    // 云
+    function placeClouds(blockMap, seed) {
+        const cloudRng = mulberry32(seed + 12345);
+        const cloudY = 19;
+        const cloudExtent = HALF_SIZE + 8;
+        for (let ix = -cloudExtent; ix <= cloudExtent; ix++) {
+            for (let iz = -cloudExtent; iz <= cloudExtent; iz++) {
+                const noiseVal = fbmNoise(ix * 0.35, iz * 0.35, seed + 88888, 4);
+                if (noiseVal > 0.5 && cloudRng() < (noiseVal - 0.5) * 1.2) {
+                    blockMap.get(BlockTypes.CLOUD).push({ x: ix, y: cloudY, z: iz });
+                    if (cloudRng() < 0.3 && noiseVal > 0.65) {
+                        blockMap.get(BlockTypes.CLOUD).push({ x: ix, y: cloudY + 1, z: iz });
                     }
                 }
             }
+        }
+    }
 
-            // Handle RTL
-            if (rtlLanguages.includes(lang)) {
-                document.documentElement.setAttribute('dir', 'rtl');
-                document.body.style.direction = 'rtl';
+    // 创建 InstancedMesh
+    function createInstancedMeshes(blockMap) {
+        const meshes = [];
+        for (const [type, blocks] of blockMap) {
+            if (blocks.length === 0) continue;
+            const colorHex = blockColors[type];
+            const preset = blockMaterialPresets[type] || {};
+            let material;
+            if (type === BlockTypes.WATER) {
+                material = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(colorHex), roughness: 0.2, metalness: 0.1,
+                    transparent: true, opacity: 0.7, depthWrite: true,
+                });
+            } else if (type === BlockTypes.CLOUD) {
+                material = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(colorHex), roughness: 0.3, metalness: 0.0,
+                    transparent: true, opacity: 0.82, depthWrite: true,
+                });
+            } else if (type === BlockTypes.FLOWER) {
+                material = new THREE.MeshStandardMaterial({ color: new THREE.Color('#ffffff'), roughness: 0.6 });
             } else {
-                document.documentElement.setAttribute('dir', 'ltr');
-                document.body.style.direction = 'ltr';
+                material = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(colorHex),
+                    roughness: preset.roughness ?? 0.7,
+                    metalness: preset.metalness ?? 0.0,
+                });
             }
 
-            // Update lang label
-            const langLabel = document.getElementById('langLabel');
-            const langNames = { zh: '中文', en: 'English', fr: 'Français', ru: 'Русский', ar: 'العربية', es: 'Español' };
-            if (langLabel) langLabel.textContent = langNames[lang] || lang;
+            const instancedMesh = new THREE.InstancedMesh(sharedGeometry, material, blocks.length);
+            instancedMesh.castShadow = true;
+            instancedMesh.receiveShadow = true;
+            if (type === BlockTypes.WATER || type === BlockTypes.CLOUD) instancedMesh.renderOrder = 1;
 
-            // Update dropdown active state
-            document.querySelectorAll('#langDropdown li').forEach(li => {
-                li.classList.toggle('active', li.getAttribute('data-lang') === lang);
-            });
-
-            // Store preference
-            localStorage.setItem('whiteInkLang', lang);
-
-            // Update modal content if open
-            updateModalForCurrentLang();
+            const dummy = new THREE.Object3D();
+            for (let i = 0; i < blocks.length; i++) {
+                const b = blocks[i];
+                dummy.position.set(b.x, b.y, b.z);
+                dummy.scale.set(1, 1, 1);
+                dummy.updateMatrix();
+                instancedMesh.setMatrixAt(i, dummy.matrix);
+                if (type === BlockTypes.FLOWER && b.color) instancedMesh.setColorAt(i, b.color);
+            }
+            instancedMesh.instanceMatrix.needsUpdate = true;
+            if (type === BlockTypes.FLOWER && blocks.length > 0 && blocks[0].color) instancedMesh.instanceColor.needsUpdate = true;
+            meshes.push(instancedMesh);
         }
+        return meshes;
+    }
 
-        function updateModalForCurrentLang() {
-            const t = translations[currentLang];
-            const modalTitle = document.getElementById('modalTitle');
-            const modalArtist = document.getElementById('modalArtist');
-            const modalDesc = document.getElementById('modalDesc');
-            const currentIndex = parseInt(modalTitle.getAttribute('data-gallery-index') || '-1');
-            if (currentIndex >= 0 && t && t.modal_works && t.modal_works[currentIndex]) {
-                modalTitle.textContent = t.modal_works[currentIndex];
-                modalArtist.textContent = t.modal_artists[currentIndex];
-                modalDesc.textContent = t.modal_descs[currentIndex];
-            }
+    function clearTerrain() {
+        for (const mesh of terrainMeshes) {
+            if (mesh.geometry && mesh.geometry !== sharedGeometry) mesh.geometry.dispose();
+            if (mesh.material) mesh.material.dispose();
+            scene.remove(mesh);
         }
+        terrainMeshes = [];
+    }
 
-        // ============ LANGUAGE SWITCHER ============
-        const langSwitcher = document.getElementById('langSwitcher');
-        const langDropdown = document.getElementById('langDropdown');
+    function generateTerrain(seed) {
+        clearTerrain();
+        const { blockMap, surfaceInfo } = collectBlocks(seed);
+        placeTrees(blockMap, surfaceInfo, seed);
+        placeFlowers(blockMap, surfaceInfo, seed);
+        placeClouds(blockMap, seed);
+        terrainMeshes = createInstancedMeshes(blockMap);
+        for (const mesh of terrainMeshes) scene.add(mesh);
+        seedText.textContent = seed;
 
-        langSwitcher.addEventListener('click', function(e) {
-            e.stopPropagation();
-            langSwitcher.classList.toggle('open');
-        });
+        let totalBlocks = 0;
+        for (const blocks of blockMap.values()) totalBlocks += blocks.length;
+        console.log(`🌍 种子 ${seed} | 方块总数: ${totalBlocks} | 包含草地、泥土、树木、花朵、矿石`);
+    }
 
-        document.addEventListener('click', function() {
-            langSwitcher.classList.remove('open');
-        });
+    let currentSeed = Math.floor(Math.random() * 1000000);
+    generateTerrain(currentSeed);
 
-        langDropdown.querySelectorAll('li').forEach(li => {
-            li.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const lang = this.getAttribute('data-lang');
-                applyTranslation(lang);
-                langSwitcher.classList.remove('open');
-            });
-        });
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        const time = performance.now() * 0.0001;
+        sunLight.position.x = 25 + Math.sin(time * 0.3) * 8;
+        sunLight.position.z = 15 + Math.cos(time * 0.3) * 8;
+        renderer.render(scene, camera);
+    }
+    animate();
 
-        // ============ MOBILE MENU ============
-        const mobileToggle = document.getElementById('mobileToggle');
-        const navLinks = document.getElementById('navLinks');
+    window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    });
 
-        mobileToggle.addEventListener('click', function() {
-            mobileToggle.classList.toggle('open');
-            navLinks.classList.toggle('active');
-        });
-
-        // Close mobile menu on link click
-        navLinks.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', () => {
-                mobileToggle.classList.remove('open');
-                navLinks.classList.remove('active');
-            });
-        });
-
-        // ============ NAVBAR SCROLL EFFECT ============
-        const navbar = document.getElementById('navbar');
-        window.addEventListener('scroll', () => {
-            if (window.scrollY > 60) {
-                navbar.classList.add('scrolled');
-            } else {
-                navbar.classList.remove('scrolled');
-            }
-        });
-
-        // ============ GALLERY MODAL ============
-        const modalOverlay = document.getElementById('modalOverlay');
-        const modalClose = document.getElementById('modalClose');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalArtist = document.getElementById('modalArtist');
-        const modalDesc = document.getElementById('modalDesc');
-        const galleryItems = document.querySelectorAll('.gallery-item');
-
-        galleryItems.forEach((item, index) => {
-            item.addEventListener('click', () => {
-                const t = translations[currentLang];
-                modalTitle.setAttribute('data-gallery-index', index);
-                if (t && t.modal_works) {
-                    modalTitle.textContent = t.modal_works[index] || '';
-                    modalArtist.textContent = t.modal_artists[index] || '';
-                    modalDesc.textContent = t.modal_descs[index] || '';
-                }
-                modalOverlay.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            });
-        });
-
-        function closeModal() {
-            modalOverlay.classList.remove('active');
-            document.body.style.overflow = '';
+    btnRegen.addEventListener('click', () => { generateTerrain(currentSeed); });
+    btnRandom.addEventListener('click', () => {
+        currentSeed = Math.floor(Math.random() * 1000000);
+        generateTerrain(currentSeed);
+    });
+    btnReset.addEventListener('click', () => {
+        const startPos = camera.position.clone();
+        const startTarget = controls.target.clone();
+        const targetPos = new THREE.Vector3(35, 24, 35);
+        const targetLook = new THREE.Vector3(0, 6, 0);
+        const startTime = performance.now();
+        function anim(now) {
+            const t = Math.min((now - startTime) / 800, 1);
+            const ease = t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2;
+            camera.position.lerpVectors(startPos, targetPos, ease);
+            controls.target.lerpVectors(startTarget, targetLook, ease);
+            controls.update();
+            if (t < 1) requestAnimationFrame(anim);
         }
+        requestAnimationFrame(anim);
+        controls.autoRotate = true;
+    });
 
-        modalClose.addEventListener('click', closeModal);
-        modalOverlay.addEventListener('click', function(e) {
-            if (e.target === modalOverlay) closeModal();
-        });
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') closeModal();
-        });
-
-        // ============ INK CANVAS ANIMATION ============
-        const canvas = document.getElementById('inkCanvas');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-        let animationId;
-
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+    window.addEventListener('keydown', (e) => {
+        if (e.key.toLowerCase() === 'r') {
+            currentSeed = Math.floor(Math.random() * 1000000);
+            generateTerrain(currentSeed);
+        } else if (e.key.toLowerCase() === 'g') {
+            generateTerrain(currentSeed);
+        } else if (e.key.toLowerCase() === 'f') {
+            controls.target.set(0, 6, 0);
+            camera.position.set(35, 24, 35);
+            controls.update();
+        } else if (e.key.toLowerCase() === 'a') {
+            controls.autoRotate = !controls.autoRotate;
         }
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
+    });
 
-        class InkParticle {
-            constructor() {
-                this.reset();
-            }
-            reset() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.size = Math.random() * 2.5 + 0.8;
-                this.speedX = (Math.random() - 0.5) * 0.3;
-                this.speedY = (Math.random() - 0.5) * 0.25 - 0.15;
-                this.opacity = Math.random() * 0.45 + 0.1;
-                this.fadeSpeed = Math.random() * 0.002 + 0.001;
-                this.life = Math.random() * 400 + 200;
-                this.maxLife = this.life;
-                this.colorType = Math.random();
-            }
-            update() {
-                this.x += this.speedX;
-                this.y += this.speedY;
-                this.life--;
-                if (this.life < this.maxLife * 0.3) {
-                    this.opacity -= this.fadeSpeed;
-                }
-                if (this.life <= 0 || this.opacity <= 0 || this.x < -50 || this.x > canvas.width + 50 || this.y <
-                    -50 || this.y > canvas.height + 50) {
-                    this.reset();
-                    this.y = canvas.height + 30;
-                    this.opacity = Math.random() * 0.4 + 0.08;
-                    this.life = this.maxLife;
-                }
-            }
-            draw(ctx) {
-                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size * 3);
-                if (this.colorType < 0.6) {
-                    gradient.addColorStop(0, `rgba(240,235,220,${this.opacity})`);
-                    gradient.addColorStop(0.5, `rgba(210,200,180,${this.opacity * 0.5})`);
-                } else if (this.colorType < 0.85) {
-                    gradient.addColorStop(0, `rgba(220,210,190,${this.opacity})`);
-                    gradient.addColorStop(0.5, `rgba(190,175,155,${this.opacity * 0.4})`);
-                } else {
-                    gradient.addColorStop(0, `rgba(255,248,235,${this.opacity * 0.8})`);
-                    gradient.addColorStop(0.5, `rgba(230,220,200,${this.opacity * 0.3})`);
-                }
-                gradient.addColorStop(1, 'rgba(0,0,0,0)');
-                ctx.fillStyle = gradient;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size * 3, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Inner bright core
-                ctx.fillStyle = `rgba(255,250,240,${this.opacity * 0.7})`;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size * 0.7, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
-        // Create particles
-        const particleCount = Math.min(80, Math.floor(window.innerWidth / 15));
-        for (let i = 0; i < particleCount; i++) {
-            particles.push(new InkParticle());
-        }
-
-        function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach(p => {
-                p.update();
-                p.draw(ctx);
-            });
-            animationId = requestAnimationFrame(animate);
-        }
-        animate();
-
-        // Adjust particle count on resize
-        window.addEventListener('resize', () => {
-            const targetCount = Math.min(80, Math.floor(window.innerWidth / 15));
-            while (particles.length < targetCount) {
-                particles.push(new InkParticle());
-            }
-            while (particles.length > targetCount) {
-                particles.pop();
-            }
-        });
-
-        // ============ INITIALIZATION ============
-        // Load saved language preference
-        const savedLang = localStorage.getItem('whiteInkLang');
-        if (savedLang && translations[savedLang]) {
-            applyTranslation(savedLang);
-        } else {
-            applyTranslation('zh');
-        }
-
-        // Smooth scroll for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function(e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            });
-        });
-
-        console.log('%c白墨画 White Ink Art %c🖌️',
-            'font-size:1.4rem;font-family:serif;color:#f5f0e8;letter-spacing:0.1em;',
-            'font-size:1rem;');
-        console.log('%c联合国6国语言支持 | UN 6-Language Support',
-            'color:#c9b896;font-family:serif;letter-spacing:0.05em;');
-        console.log('%c中文 · English · Français · Русский · العربية · Español',
-            'color:#a09888;font-family:serif;');
-    </script>
+    console.log('✅ 修复版地形已加载！现在包含：草地、泥土、树木、花朵、煤矿、铁矿');
+</script>
 </body>
 </html>
