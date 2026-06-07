@@ -3,200 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的世界风格 - 增强地形生成器</title>
+    <title>我的世界风格 - 随机地形（不透明修复）</title>
     <style>
         :root {
             --bg: #1a1a2e;
-            --panel-bg: rgba(20, 20, 40, 0.9);
+            --panel-bg: rgba(20,20,40,0.85);
             --text: #e0e0e0;
             --accent: #5cb85c;
             --accent2: #f0ad4e;
         }
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{
+            background:var(--bg);overflow:hidden;
+            font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+            height:100vh;width:100vw;user-select:none;-webkit-user-select:none;
+            -webkit-tap-highlight-color:transparent;cursor:grab;
+        }
+        body:active{cursor:grabbing;}
+        #canvas-container{position:fixed;inset:0;z-index:1;}
+        canvas{display:block;}
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: var(--bg);
-            overflow: hidden;
-            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-            height: 100vh;
-            width: 100vw;
-            user-select: none;
-            -webkit-user-select: none;
-            -webkit-tap-highlight-color: transparent;
-            cursor: grab;
+        #info-panel{
+            position:fixed;top:16px;left:50%;transform:translateX(-50%);
+            z-index:10;background:var(--panel-bg);
+            border:1px solid rgba(255,255,255,0.2);border-radius:20px;
+            padding:10px 22px;display:flex;align-items:center;gap:14px;
+            backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+            box-shadow:0 8px 32px rgba(0,0,0,0.3);pointer-events:auto;
         }
-        body:active { cursor: grabbing; }
-        body.dragging { cursor: grabbing; }
+        #info-panel .dot{width:10px;height:10px;border-radius:50%;background:#6ab04c;box-shadow:0 0 8px #6ab04c;}
+        #info-panel span{color:var(--text);font-size:13px;letter-spacing:0.5px;}
+        #info-panel .seed-display{color:#ffda79;font-weight:600;}
 
-        #canvas-container { position: fixed; inset: 0; z-index: 1; }
-        canvas { display: block; }
+        #btn-group{
+            position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+            z-index:10;display:flex;gap:12px;pointer-events:auto;
+        }
+        .btn{
+            padding:12px 24px;border-radius:28px;border:none;
+            font-size:14px;font-weight:600;cursor:pointer;letter-spacing:0.5px;
+            transition:all 0.25s ease;backdrop-filter:blur(12px);
+            -webkit-backdrop-filter:blur(12px);box-shadow:0 6px 20px rgba(0,0,0,0.3);
+            outline:none;font-family:inherit;
+        }
+        .btn-regenerate{background:var(--accent);color:#fff;}
+        .btn-regenerate:hover{background:#4cae4c;transform:translateY(-2px);}
+        .btn-random{background:var(--accent2);color:#333;}
+        .btn-random:hover{background:#ec971f;transform:translateY(-2px);}
+        .btn-reset{background:rgba(255,255,255,0.1);color:#ccc;}
+        .btn-reset:hover{background:rgba(255,255,255,0.2);color:#fff;transform:translateY(-2px);}
+        .btn:active{transform:scale(0.96);}
 
-        #info-panel {
-            position: fixed;
-            top: 16px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 10;
-            background: var(--panel-bg);
-            border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 20px;
-            padding: 10px 22px;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            flex-wrap: wrap;
-            max-width: 90%;
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-            pointer-events: auto;
+        #legend{
+            position:fixed;right:16px;top:50%;transform:translateY(-50%);
+            z-index:10;background:var(--panel-bg);border-radius:16px;
+            padding:14px 16px;border:1px solid rgba(255,255,255,0.15);
+            backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+            box-shadow:0 6px 20px rgba(0,0,0,0.25);
+            display:flex;flex-direction:column;gap:7px;
         }
-        #info-panel .dot {
-            width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0;
-        }
-        #info-panel .dot.green { background: #6ab04c; box-shadow: 0 0 8px #6ab04c; }
-        #info-panel span { color: var(--text); font-size: 13px; letter-spacing: 0.5px; white-space: nowrap; }
-        #info-panel .seed-display { color: #ffda79; font-weight: 600; font-size: 13px; }
-        #stats { display: flex; gap: 20px; font-size: 12px; color: #aaa; }
-
-        #btn-group {
-            position: fixed;
-            bottom: 28px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 10;
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            justify-content: center;
-            max-width: 90%;
-            pointer-events: auto;
-        }
-        .btn {
-            padding: 12px 24px;
-            border-radius: 28px;
-            border: none;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            letter-spacing: 0.5px;
-            transition: all 0.25s ease;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-            outline: none;
-            font-family: inherit;
-        }
-        .btn-regenerate { background: var(--accent); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
-        .btn-regenerate:hover { background: #4cae4c; transform: translateY(-2px); box-shadow: 0 10px 28px rgba(92,184,92,0.4); }
-        .btn-random { background: var(--accent2); color: #333; border: 1px solid rgba(255,255,255,0.2); }
-        .btn-random:hover { background: #ec971f; transform: translateY(-2px); box-shadow: 0 10px 28px rgba(240,173,78,0.4); }
-        .btn-reset { background: rgba(255,255,255,0.1); color: #ccc; border: 1px solid rgba(255,255,255,0.2); }
-        .btn-reset:hover { background: rgba(255,255,255,0.2); color: #fff; transform: translateY(-2px); }
-        .btn-settings { background: rgba(100,180,255,0.15); color: #64b4ff; border: 1px solid rgba(100,180,255,0.3); }
-        .btn-settings:hover { background: rgba(100,180,255,0.25); transform: translateY(-2px); }
-        .btn:active { transform: scale(0.96); }
-
-        #legend {
-            position: fixed;
-            right: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            z-index: 10;
-            background: var(--panel-bg);
-            border-radius: 16px;
-            padding: 14px 16px;
-            border: 1px solid rgba(255,255,255,0.12);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
-            pointer-events: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 7px;
-            max-height: 70vh;
-            overflow-y: auto;
-        }
-        #legend .item { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #ccc; }
-        #legend .swatch { width: 16px; height: 16px; border-radius: 3px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.25); }
-
-        #settings-panel {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.7);
-            z-index: 100;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(4px);
-        }
-        #settings-panel.active { display: flex; }
-        #settings-modal {
-            background: var(--panel-bg);
-            border-radius: 20px;
-            padding: 30px;
-            border: 1px solid rgba(255,255,255,0.2);
-            max-width: 500px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-        }
-        #settings-modal h3 { color: var(--text); margin-bottom: 20px; font-size: 18px; }
-        .setting-group {
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        .setting-group:last-child { border-bottom: none; }
-        .setting-label {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            color: var(--text);
-            font-size: 13px;
-            margin-bottom: 8px;
-        }
-        .setting-label span:first-child { font-weight: 600; }
-        .setting-label span:last-child { color: #ffda79; font-size: 12px; }
-        input[type="range"] {
-            width: 100%;
-            height: 6px;
-            border-radius: 3px;
-            background: rgba(255,255,255,0.1);
-            outline: none;
-            -webkit-appearance: none;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: var(--accent);
-            cursor: pointer;
-        }
-        input[type="range"]::-moz-range-thumb {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: var(--accent);
-            cursor: pointer;
-            border: none;
-        }
-        .btn-close { position: absolute; top: 10px; right: 15px; background: none; border: none; color: #aaa; cursor: pointer; font-size: 24px; }
-        .btn-close:hover { color: #fff; }
-
-        @media (max-width: 768px) {
-            #legend { right: 4px; padding: 8px 10px; gap: 4px; border-radius: 10px; }
-            #legend .item { font-size: 10px; gap: 5px; }
-            #legend .swatch { width: 12px; height: 12px; }
-            #info-panel { padding: 8px 14px; gap: 8px; border-radius: 16px; top: 8px; font-size: 11px; }
-            #info-panel span { font-size: 11px; }
-            #stats { font-size: 10px; gap: 10px; }
-            .btn { padding: 10px 16px; font-size: 12px; border-radius: 22px; }
-            #btn-group { gap: 8px; bottom: 16px; }
-            #settings-modal { padding: 20px; }
+        #legend .item{display:flex;align-items:center;gap:8px;font-size:11px;color:#ccc;}
+        #legend .swatch{width:16px;height:16px;border-radius:3px;border:1px solid rgba(255,255,255,0.3);}
+        @media(max-width:768px){
+            #legend{right:4px;padding:8px 10px;gap:4px;}
+            #legend .item{font-size:10px;}
+            .btn{padding:10px 16px;font-size:12px;}
         }
     </style>
 </head>
@@ -204,83 +75,27 @@
 <div id="canvas-container"></div>
 
 <div id="info-panel">
-    <span class="dot green"></span>
-    <span>种子:</span>
+    <span class="dot"></span>
+    <span>地形种子:</span>
     <span class="seed-display" id="seed-text">---</span>
-    <div id="stats"></div>
 </div>
 
 <div id="legend">
-    <div class="item"><span class="swatch" style="background:#f5f5f0;"></span> 雪</div>
-    <div class="item"><span class="swatch" style="background:#8b8b7a;"></span> 岩石</div>
-    <div class="item"><span class="swatch" style="background:#7ec850;"></span> 草地</div>
-    <div class="item"><span class="swatch" style="background:#c2a64b;"></span> 沙地</div>
-    <div class="item"><span class="swatch" style="background:#8b6914;"></span> 泥土</div>
+    <div class="item"><span class="swatch" style="background:#4a7d2e;"></span> 草地</div>
+    <div class="item"><span class="swatch" style="background:#6b4e0a;"></span> 泥土</div>
     <div class="item"><span class="swatch" style="background:#6b6b6b;"></span> 石头</div>
-    <div class="item"><span class="swatch" style="background:#4488cc;"></span> 水</div>
-    <div class="item"><span class="swatch" style="background:#3d7a3d;"></span> 树叶</div>
-    <div class="item"><span class="swatch" style="background:#444444;"></span> 煤矿</div>
-    <div class="item"><span class="swatch" style="background:#d4a373;"></span> 铁矿</div>
-    <div class="item"><span class="swatch" style="background:#ffb238;"></span> 金矿</div>
-    <div class="item"><span class="swatch" style="background:#00d4ff;"></span> 钻石</div>
-    <div class="item"><span class="swatch" style="background:#ff6b9d;"></span> 小道具</div>
-    <div class="item"><span class="swatch" style="background:#a78bfa;"></span> 灌木</div>
+    <div class="item"><span class="swatch" style="background:#a68a3a;"></span> 沙地</div>
+    <div class="item"><span class="swatch" style="background:#e0e0e0;"></span> 雪</div>
+    <div class="item"><span class="swatch" style="background:#2255aa;"></span> 水</div>
+    <div class="item"><span class="swatch" style="background:#2d5a2d;"></span> 树叶</div>
+    <div class="item"><span class="swatch" style="background:#333333;"></span> 煤矿</div>
+    <div class="item"><span class="swatch" style="background:#b87d4a;"></span> 铁矿</div>
 </div>
 
 <div id="btn-group">
     <button class="btn btn-regenerate" id="btn-regen">🔄 重新生成</button>
     <button class="btn btn-random" id="btn-random">🎲 随机地形</button>
     <button class="btn btn-reset" id="btn-reset">🏠 重置视角</button>
-    <button class="btn btn-settings" id="btn-settings">⚙️ 设置</button>
-</div>
-
-<div id="settings-panel">
-    <div id="settings-modal">
-        <button class="btn-close" onclick="closeSettings()">×</button>
-        <h3>地形设置</h3>
-        <div class="setting-group">
-            <div class="setting-label">
-                <span>地形大小</span>
-                <span id="size-val">42</span>
-            </div>
-            <input type="range" id="terrain-size" min="20" max="80" value="42" step="2">
-        </div>
-        <div class="setting-group">
-            <div class="setting-label">
-                <span>高度倍数</span>
-                <span id="height-val">1.0×</span>
-            </div>
-            <input type="range" id="height-multiplier" min="0.5" max="2" value="1" step="0.1">
-        </div>
-        <div class="setting-group">
-            <div class="setting-label">
-                <span>树木密度</span>
-                <span id="tree-val">1.0×</span>
-            </div>
-            <input type="range" id="tree-density" min="0.2" max="2" value="1" step="0.1">
-        </div>
-        <div class="setting-group">
-            <div class="setting-label">
-                <span>花朵密度</span>
-                <span id="flower-val">1.0×</span>
-            </div>
-            <input type="range" id="flower-density" min="0.2" max="2" value="1" step="0.1">
-        </div>
-        <div class="setting-group">
-            <div class="setting-label">
-                <span>矿物密度</span>
-                <span id="ore-val">1.0×</span>
-            </div>
-            <input type="range" id="ore-density" min="0.5" max="2" value="1" step="0.1">
-        </div>
-        <div class="setting-group">
-            <div class="setting-label">
-                <span>水位高度</span>
-                <span id="water-val">3</span>
-            </div>
-            <input type="range" id="water-level" min="1" max="8" value="3" step="1">
-        </div>
-    </div>
 </div>
 
 <script type="importmap">
@@ -296,568 +111,488 @@
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-    // 全局配置
-    const config = {
-        terrainSize: 42,
-        heightMultiplier: 1.0,
-        treeDensity: 1.0,
-        flowerDensity: 1.0,
-        oreDensity: 1.0,
-        waterLevel: 3,
-    };
-
-    // DOM 元素
     const container = document.getElementById('canvas-container');
     const seedText = document.getElementById('seed-text');
-    const statsDiv = document.getElementById('stats');
     const btnRegen = document.getElementById('btn-regen');
     const btnRandom = document.getElementById('btn-random');
     const btnReset = document.getElementById('btn-reset');
-    const btnSettings = document.getElementById('btn-settings');
-    const settingsPanel = document.getElementById('settings-panel');
 
-    // 设置面板事件
-    document.getElementById('terrain-size').addEventListener('input', (e) => {
-        config.terrainSize = parseInt(e.target.value);
-        document.getElementById('size-val').textContent = e.target.value;
-    });
-    document.getElementById('height-multiplier').addEventListener('input', (e) => {
-        config.heightMultiplier = parseFloat(e.target.value);
-        document.getElementById('height-val').textContent = (parseFloat(e.target.value)).toFixed(1) + '×';
-    });
-    document.getElementById('tree-density').addEventListener('input', (e) => {
-        config.treeDensity = parseFloat(e.target.value);
-        document.getElementById('tree-val').textContent = (parseFloat(e.target.value)).toFixed(1) + '×';
-    });
-    document.getElementById('flower-density').addEventListener('input', (e) => {
-        config.flowerDensity = parseFloat(e.target.value);
-        document.getElementById('flower-val').textContent = (parseFloat(e.target.value)).toFixed(1) + '×';
-    });
-    document.getElementById('ore-density').addEventListener('input', (e) => {
-        config.oreDensity = parseFloat(e.target.value);
-        document.getElementById('ore-val').textContent = (parseFloat(e.target.value)).toFixed(1) + '×';
-    });
-    document.getElementById('water-level').addEventListener('input', (e) => {
-        config.waterLevel = parseInt(e.target.value);
-        document.getElementById('water-val').textContent = e.target.value;
-    });
-
-    window.closeSettings = () => { settingsPanel.classList.remove('active'); };
-    btnSettings.addEventListener('click', () => { settingsPanel.classList.add('active'); });
-    settingsPanel.addEventListener('click', (e) => { if(e.target === settingsPanel) closeSettings(); });
-
-    // 场景初始化
+    // 场景
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#87ceeb');
-    scene.fog = new THREE.Fog('#b8d8f0', 80, 200);
+    scene.background = new THREE.Color('#8ecafc');
+    scene.fog = new THREE.Fog('#b0d8f8', 70, 160);
 
-    const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 1, 300);
-    camera.position.set(50, 30, 50);
+    const camera = new THREE.PerspectiveCamera(50, container.clientWidth/container.clientHeight, 1, 200);
+    camera.position.set(30, 20, 30);
     camera.lookAt(0, 5, 0);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 1.0;
     container.appendChild(renderer.domElement);
 
-    // 控制器
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, 8, 0);
+    controls.target.set(0, 6, 0);
     controls.enableDamping = true;
     controls.dampingFactor = 0.12;
-    controls.minDistance = 8;
-    controls.maxDistance = 150;
-    controls.maxPolarAngle = Math.PI * 0.52;
-    controls.minPolarAngle = 0.15;
+    controls.minDistance = 6;
+    controls.maxDistance = 70;
+    controls.maxPolarAngle = Math.PI * 0.5;
+    controls.minPolarAngle = 0.1;
     controls.autoRotate = true;
-    controls.autoRotateSpeed = 0.2;
+    controls.autoRotateSpeed = 0.3;
     controls.update();
 
-    // 增强光照系统
-    const ambientLight = new THREE.AmbientLight('#8899bb', 1.4);
-    scene.add(ambientLight);
-    const hemisphereLight = new THREE.HemisphereLight('#ffe8b6', '#334466', 1.0);
-    scene.add(hemisphereLight);
-    
-    const sunLight = new THREE.DirectionalLight('#fff8e7', 4.0);
-    sunLight.position.set(40, 50, 30);
+    // 光照
+    scene.add(new THREE.AmbientLight('#8899bb', 1.2));
+    scene.add(new THREE.HemisphereLight('#ffffff', '#5577aa', 0.7));
+    const sunLight = new THREE.DirectionalLight('#ffffff', 3.8);
+    sunLight.position.set(30, 40, 20);
     sunLight.castShadow = true;
-    sunLight.shadow.mapSize.width = 4096;
-    sunLight.shadow.mapSize.height = 4096;
+    sunLight.shadow.mapSize.width = 2048;
+    sunLight.shadow.mapSize.height = 2048;
     sunLight.shadow.camera.near = 0.5;
-    sunLight.shadow.camera.far = 200;
-    sunLight.shadow.camera.left = -80;
-    sunLight.shadow.camera.right = 80;
-    sunLight.shadow.camera.top = 80;
-    sunLight.shadow.camera.bottom = -80;
-    sunLight.shadow.bias = -0.0004;
-    sunLight.shadow.normalBias = 0.02;
+    sunLight.shadow.camera.far = 120;
+    sunLight.shadow.camera.left = -45;
+    sunLight.shadow.camera.right = 45;
+    sunLight.shadow.camera.top = 45;
+    sunLight.shadow.camera.bottom = -45;
+    sunLight.shadow.bias = -0.0002;
     scene.add(sunLight);
 
-    // 添加月光辅助
-    const moonLight = new THREE.DirectionalLight('#6b8cae', 0.3);
-    moonLight.position.set(-40, 40, -50);
-    scene.add(moonLight);
-
-    // 噪声函数
-    function hash2D(x, z, seed) {
-        const n = Math.sin(x * 127.1 + z * 311.7 + seed * 43758.5453) * 43758.5453;
-        return n - Math.floor(n);
-    }
-    function smoothNoise2D(x, z, seed) {
-        const ix = Math.floor(x), iz = Math.floor(z);
-        const fx = x - ix, fz = z - iz;
-        const sx = fx * fx * (3 - 2 * fx), sz = fz * fz * (3 - 2 * fz);
-        const v00 = hash2D(ix, iz, seed), v10 = hash2D(ix + 1, iz, seed);
-        const v01 = hash2D(ix, iz + 1, seed), v11 = hash2D(ix + 1, iz + 1, seed);
-        const a = v00 + (v10 - v00) * sx, b = v01 + (v11 - v01) * sx;
-        return a + (b - a) * sz;
-    }
-    function fbmNoise(x, z, seed, octaves = 6) {
-        let value = 0, amplitude = 1, frequency = 1, maxVal = 0;
-        for (let i = 0; i < octaves; i++) {
-            value += amplitude * smoothNoise2D(x * frequency, z * frequency, seed + i * 1000);
-            maxVal += amplitude;
-            amplitude *= 0.5;
-            frequency *= 2.0;
-        }
-        return value / maxVal;
-    }
-    function moistureNoise(x, z, seed) {
-        return fbmNoise(x * 0.7 + 5.3, z * 0.7 - 3.1, seed + 50000, 4);
+    // ---------- 像素纹理生成（完全无透明，水除外）----------
+    function createTexture(canvasSize, drawFunc) {
+        const canvas = document.createElement('canvas');
+        canvas.width = canvasSize;
+        canvas.height = canvasSize;
+        const ctx = canvas.getContext('2d');
+        drawFunc(ctx, canvasSize);
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.magFilter = THREE.NearestFilter;
+        texture.minFilter = THREE.NearestFilter;
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        return texture;
     }
 
-    // 方块类型（扩展）
+    function fillRect(ctx, x, y, w, h, color) {
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, w, h);
+    }
+
+    // 石头
+    function stoneTex() {
+        return createTexture(16, (ctx, s) => {
+            fillRect(ctx, 0, 0, s, s, '#6b6b6b');
+            ctx.fillStyle = '#505050';
+            ctx.fillRect(2, 5, 2, 6); ctx.fillRect(7, 2, 1, 12);
+            ctx.fillRect(12, 1, 2, 3); ctx.fillRect(10, 8, 3, 2);
+            ctx.fillRect(4, 11, 5, 1); ctx.fillRect(14, 7, 1, 5);
+            ctx.fillStyle = '#404040';
+            ctx.fillRect(5, 3, 1, 1); ctx.fillRect(8, 10, 1, 1);
+        });
+    }
+
+    // 泥土
+    function dirtTex() {
+        return createTexture(16, (ctx, s) => {
+            fillRect(ctx, 0, 0, s, s, '#6b4e0a');
+            ctx.fillStyle = '#4d3606';
+            ctx.fillRect(3, 2, 2, 2); ctx.fillRect(10, 5, 1, 1);
+            ctx.fillRect(6, 9, 3, 2); ctx.fillRect(13, 11, 2, 1);
+            ctx.fillRect(1, 7, 1, 2);
+            ctx.fillStyle = '#3a2804';
+            ctx.fillRect(8, 3, 1, 1); ctx.fillRect(14, 4, 1, 1);
+        });
+    }
+
+    // 草地顶面
+    function grassTopTex() {
+        return createTexture(16, (ctx, s) => {
+            fillRect(ctx, 0, 0, s, s, '#4a7d2e');
+            ctx.fillStyle = '#5e9e33';
+            ctx.fillRect(2, 3, 2, 1); ctx.fillRect(7, 1, 1, 3);
+            ctx.fillRect(11, 5, 3, 1); ctx.fillRect(4, 8, 2, 2);
+            ctx.fillRect(13, 10, 1, 2); ctx.fillRect(1, 12, 3, 1);
+            ctx.fillStyle = '#6daa3a';
+            ctx.fillRect(9, 13, 1, 1); ctx.fillRect(6, 6, 1, 1);
+        });
+    }
+
+    // 草地侧面
+    function grassSideTex() {
+        return createTexture(16, (ctx, s) => {
+            fillRect(ctx, 0, 0, s, s, '#6b4e0a');
+            fillRect(ctx, 0, 0, s, 3, '#4a7d2e');
+            ctx.fillStyle = '#5e9e33';
+            ctx.fillRect(2, 1, 2, 1); ctx.fillRect(10, 2, 3, 1);
+            ctx.fillStyle = '#4d3606';
+            ctx.fillRect(4, 6, 2, 1); ctx.fillRect(11, 8, 1, 2);
+            ctx.fillRect(1, 10, 2, 2);
+        });
+    }
+
+    // 沙子
+    function sandTex() {
+        return createTexture(16, (ctx, s) => {
+            fillRect(ctx, 0, 0, s, s, '#a68a3a');
+            ctx.fillStyle = '#8f752f';
+            ctx.fillRect(3, 2, 1, 1); ctx.fillRect(7, 5, 2, 1);
+            ctx.fillRect(12, 3, 1, 2); ctx.fillRect(5, 9, 1, 1);
+            ctx.fillRect(10, 11, 2, 1); ctx.fillRect(1, 7, 1, 1);
+            ctx.fillStyle = '#7a6227';
+            ctx.fillRect(13, 8, 1, 1); ctx.fillRect(2, 13, 1, 1);
+        });
+    }
+
+    // 雪
+    function snowTex() {
+        return createTexture(16, (ctx, s) => {
+            fillRect(ctx, 0, 0, s, s, '#e0e0e0');
+            ctx.fillStyle = '#c8d0d8';
+            ctx.fillRect(4, 2, 1, 1); ctx.fillRect(10, 5, 2, 1);
+            ctx.fillRect(2, 8, 1, 2); ctx.fillRect(13, 10, 1, 1);
+            ctx.fillRect(7, 12, 2, 1);
+        });
+    }
+
+    // 水（半透明，保留）
+    function waterTex() {
+        return createTexture(16, (ctx, s) => {
+            fillRect(ctx, 0, 0, s, s, '#2255aa');
+            ctx.fillStyle = '#4488cc';
+            ctx.fillRect(2, 4, 4, 1); ctx.fillRect(9, 8, 5, 1);
+            ctx.fillRect(1, 12, 6, 1); ctx.fillRect(6, 14, 5, 1);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(4, 6, 2, 1); ctx.fillRect(11, 2, 1, 1);
+        });
+    }
+
+    // 树叶
+    function leavesTex() {
+        return createTexture(16, (ctx, s) => {
+            fillRect(ctx, 0, 0, s, s, '#2d5a2d');
+            ctx.fillStyle = '#3a7a3a';
+            ctx.fillRect(2, 2, 3, 2); ctx.fillRect(8, 1, 4, 3);
+            ctx.fillRect(5, 6, 2, 2); ctx.fillRect(11, 7, 3, 2);
+            ctx.fillRect(1, 10, 4, 2); ctx.fillRect(7, 12, 5, 2);
+            ctx.fillStyle = '#1f401f';
+            ctx.fillRect(3, 5, 1, 1); ctx.fillRect(10, 9, 1, 1);
+            ctx.fillRect(2, 11, 1, 1); ctx.fillRect(8, 4, 1, 1);
+        });
+    }
+
+    // 木头
+    function woodTex() {
+        return createTexture(16, (ctx, s) => {
+            fillRect(ctx, 0, 0, s, s, '#6b3f1f');
+            ctx.fillStyle = '#4d2b12';
+            ctx.fillRect(0, 2, s, 1); ctx.fillRect(0, 5, s, 1);
+            ctx.fillRect(0, 8, s, 1); ctx.fillRect(0, 11, s, 1);
+            ctx.fillRect(0, 14, s, 1);
+            ctx.fillStyle = '#8b5a2b';
+            ctx.fillRect(3, 3, 2, 1); ctx.fillRect(10, 6, 3, 1);
+            ctx.fillRect(1, 9, 2, 1); ctx.fillRect(8, 12, 4, 1);
+        });
+    }
+
+    // 煤矿
+    function coalOreTex() {
+        return createTexture(16, (ctx, s) => {
+            fillRect(ctx, 0, 0, s, s, '#6b6b6b');
+            ctx.fillStyle = '#333333';
+            ctx.fillRect(4, 3, 3, 3); ctx.fillRect(9, 7, 2, 2);
+            ctx.fillRect(2, 9, 2, 3); ctx.fillRect(11, 12, 3, 2);
+            ctx.fillStyle = '#505050';
+            ctx.fillRect(7, 2, 1, 3); ctx.fillRect(13, 5, 2, 1);
+        });
+    }
+
+    // 铁矿
+    function ironOreTex() {
+        return createTexture(16, (ctx, s) => {
+            fillRect(ctx, 0, 0, s, s, '#6b6b6b');
+            ctx.fillStyle = '#b87d4a';
+            ctx.fillRect(3, 4, 2, 2); ctx.fillRect(10, 3, 2, 3);
+            ctx.fillRect(6, 9, 3, 2); ctx.fillRect(12, 11, 2, 2);
+            ctx.fillStyle = '#505050';
+            ctx.fillRect(5, 2, 1, 4); ctx.fillRect(14, 7, 1, 3);
+        });
+    }
+
+    // 基岩
+    function bedrockTex() {
+        return createTexture(16, (ctx, s) => {
+            fillRect(ctx, 0, 0, s, s, '#2a2a2a');
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(2, 3, 3, 2); ctx.fillRect(8, 6, 2, 3);
+            ctx.fillRect(12, 2, 2, 2); ctx.fillRect(4, 9, 4, 2);
+            ctx.fillRect(1, 13, 3, 2);
+        });
+    }
+
+    // 花朵（不透明背景，深绿色，模拟草地上的花）
+    function flowerTex(colorHex) {
+        return createTexture(8, (ctx, s) => {
+            // 不透明背景：用草地色填充
+            fillRect(ctx, 0, 0, s, s, '#4a7d2e');
+            // 画花
+            ctx.fillStyle = colorHex;
+            ctx.fillRect(2, 2, 4, 4);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(3, 3, 2, 2);
+        });
+    }
+
     const BlockTypes = {
-        BEDROCK: 'bedrock',
-        STONE: 'stone',
-        DIRT: 'dirt',
-        GRASS: 'grass',
-        SAND: 'sand',
-        SNOW: 'snow',
-        WATER: 'water',
-        WOOD: 'wood',
-        LEAVES: 'leaves',
-        FLOWER: 'flower',
-        CLOUD: 'cloud',
-        COAL_ORE: 'coal_ore',
-        IRON_ORE: 'iron_ore',
-        GOLD_ORE: 'gold_ore',
-        DIAMOND_ORE: 'diamond_ore',
-        DEBRIS: 'debris',
-        SHRUB: 'shrub',
+        BEDROCK: 'bedrock', STONE: 'stone', DIRT: 'dirt', GRASS: 'grass',
+        SAND: 'sand', SNOW: 'snow', WATER: 'water', WOOD: 'wood',
+        LEAVES: 'leaves', FLOWER: 'flower', COAL_ORE: 'coal_ore', IRON_ORE: 'iron_ore',
     };
 
-    const blockColors = {
-        [BlockTypes.BEDROCK]: '#3d3d3d',
-        [BlockTypes.STONE]: '#6b6b6b',
-        [BlockTypes.DIRT]: '#8b6914',
-        [BlockTypes.GRASS]: '#7ec850',
-        [BlockTypes.SAND]: '#c2a64b',
-        [BlockTypes.SNOW]: '#f5f5f0',
-        [BlockTypes.WATER]: '#4488cc',
-        [BlockTypes.WOOD]: '#7d5e3b',
-        [BlockTypes.LEAVES]: '#3d7a3d',
-        [BlockTypes.CLOUD]: '#fafeff',
-        [BlockTypes.COAL_ORE]: '#444444',
-        [BlockTypes.IRON_ORE]: '#d4a373',
-        [BlockTypes.GOLD_ORE]: '#ffb238',
-        [BlockTypes.DIAMOND_ORE]: '#00d4ff',
-        [BlockTypes.DEBRIS]: '#ff6b9d',
-        [BlockTypes.SHRUB]: '#a78bfa',
-    };
+    const texCache = new Map();
+    function getMaterial(type, flowerColor = null) {
+        // 草地多材质
+        if (type === BlockTypes.GRASS) {
+            if (!texCache.has('grassMats')) {
+                const top = grassTopTex();
+                const side = grassSideTex();
+                const bottom = dirtTex();
+                texCache.set('grassMats', [
+                    new THREE.MeshStandardMaterial({ map: side, roughness: 0.7 }),
+                    new THREE.MeshStandardMaterial({ map: side, roughness: 0.7 }),
+                    new THREE.MeshStandardMaterial({ map: top, roughness: 0.7 }),
+                    new THREE.MeshStandardMaterial({ map: bottom, roughness: 0.8 }),
+                    new THREE.MeshStandardMaterial({ map: side, roughness: 0.7 }),
+                    new THREE.MeshStandardMaterial({ map: side, roughness: 0.7 }),
+                ]);
+            }
+            return texCache.get('grassMats');
+        }
+        // 水：保留透明
+        if (type === BlockTypes.WATER) {
+            if (!texCache.has('water')) {
+                const tex = waterTex();
+                const mat = new THREE.MeshStandardMaterial({
+                    map: tex,
+                    transparent: true,
+                    opacity: 0.65,
+                    roughness: 0.1,
+                    depthWrite: true,
+                });
+                mat.renderOrder = 1;
+                texCache.set('water', mat);
+            }
+            return texCache.get('water');
+        }
+        // 花朵：不透明
+        if (type === BlockTypes.FLOWER && flowerColor) {
+            const key = `flower_${flowerColor}`;
+            if (!texCache.has(key)) {
+                const tex = flowerTex(flowerColor);
+                texCache.set(key, new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6 }));
+            }
+            return texCache.get(key);
+        }
+        // 其他方块
+        if (!texCache.has(type)) {
+            let tex;
+            switch(type) {
+                case BlockTypes.STONE: tex = stoneTex(); break;
+                case BlockTypes.DIRT: tex = dirtTex(); break;
+                case BlockTypes.SAND: tex = sandTex(); break;
+                case BlockTypes.SNOW: tex = snowTex(); break;
+                case BlockTypes.WOOD: tex = woodTex(); break;
+                case BlockTypes.LEAVES: tex = leavesTex(); break;
+                case BlockTypes.COAL_ORE: tex = coalOreTex(); break;
+                case BlockTypes.IRON_ORE: tex = ironOreTex(); break;
+                case BlockTypes.BEDROCK: tex = bedrockTex(); break;
+                default: tex = stoneTex();
+            }
+            texCache.set(type, new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7 }));
+        }
+        return texCache.get(type);
+    }
 
-    const blockMaterialPresets = {
-        [BlockTypes.WATER]: { transparent: true, opacity: 0.7, roughness: 0.2 },
-        [BlockTypes.CLOUD]: { transparent: true, opacity: 0.85, roughness: 0.3 },
-        [BlockTypes.SNOW]: { roughness: 0.5 },
-        [BlockTypes.GRASS]: { roughness: 0.8 },
-        [BlockTypes.SAND]: { roughness: 0.9 },
-        [BlockTypes.DIRT]: { roughness: 0.85 },
-        [BlockTypes.STONE]: { roughness: 0.7 },
-        [BlockTypes.BEDROCK]: { roughness: 0.6 },
-        [BlockTypes.WOOD]: { roughness: 0.75 },
-        [BlockTypes.LEAVES]: { roughness: 0.7 },
-        [BlockTypes.COAL_ORE]: { roughness: 0.65 },
-        [BlockTypes.IRON_ORE]: { roughness: 0.6, metalness: 0.2 },
-        [BlockTypes.GOLD_ORE]: { roughness: 0.5, metalness: 0.5 },
-        [BlockTypes.DIAMOND_ORE]: { roughness: 0.3, metalness: 0.3 },
-        [BlockTypes.SHRUB]: { roughness: 0.8 },
-        [BlockTypes.DEBRIS]: { roughness: 0.7 },
-    };
+    const SIZE = 42;
+    const HALF = SIZE/2;
+    const WATER_LV = 3;
+    const SNOW_LINE = 15;
+    const STONE_LINE = 12;
+
+    function hash2D(x,z,s){ const n = Math.sin(x*127.1+z*311.7+s*43758.5453)*43758.5453; return n - Math.floor(n); }
+    function smoothNoise2D(x,z,s){
+        const ix=Math.floor(x),iz=Math.floor(z),fx=x-ix,fz=z-iz;
+        const sx=fx*fx*(3-2*fx),sz=fz*fz*(3-2*fz);
+        const v00=hash2D(ix,iz,s),v10=hash2D(ix+1,iz,s),v01=hash2D(ix,iz+1,s),v11=hash2D(ix+1,iz+1,s);
+        return v00+(v10-v00)*sx + (v01+(v11-v01)*sx - (v00+(v10-v00)*sx))*sz;
+    }
+    function fbm(x,z,s,o=6){ let v=0,a=1,f=1,m=0; for(let i=0;i<o;i++){ v+=a*smoothNoise2D(x*f,z*f,s+i*1000); m+=a; a*=0.5; f*=2; } return v/m; }
+    function moist(x,z,s){ return fbm(x*0.7+5.3,z*0.7-3.1,s+50000,4); }
+
+    function mulberry32(a){ return function(){ a|=0; a=a+0x6d2b79f5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
 
     let terrainMeshes = [];
-    const sharedGeometry = new THREE.BoxGeometry(1, 1, 1);
+    const geo = new THREE.BoxGeometry(1,1,1);
 
-    function mulberry32(a) {
-        return function() {
-            a |= 0; a = (a + 0x6d2b79f5) | 0;
-            let t = Math.imul(a ^ (a >>> 15), 1 | a);
-            t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-        };
-    }
-
-    // 改进的地形收集
     function collectBlocks(seed) {
-        const blockMap = new Map();
-        for (const type of Object.values(BlockTypes)) blockMap.set(type, []);
-        const surfaceInfo = [];
+        const map = new Map();
+        for(let t of Object.values(BlockTypes)) map.set(t, []);
+        const info = [];
+        for(let ix=0; ix<SIZE; ix++) {
+            for(let iz=0; iz<SIZE; iz++) {
+                const wx=ix-HALF, wz=iz-HALF;
+                const hRaw = fbm(wx*0.12, wz*0.12, seed, 7)*9+7;
+                const h = Math.max(1, Math.min(19, Math.round(hRaw)));
+                const m = (moist(wx,wz,seed)+1)/2;
+                let surface;
+                if(h<=WATER_LV+1) surface=BlockTypes.SAND;
+                else if(h>=SNOW_LINE) surface=BlockTypes.SNOW;
+                else if(h>=STONE_LINE) surface=BlockTypes.STONE;
+                else if(m<0.12) surface=BlockTypes.SAND;
+                else surface=BlockTypes.GRASS;
 
-        const HALF_SIZE = config.terrainSize / 2;
-        const WATER_LEVEL = config.waterLevel;
-        const SNOW_LINE = 15 * config.heightMultiplier;
-        const STONE_LINE = 12 * config.heightMultiplier;
-
-        for (let ix = 0; ix < config.terrainSize; ix++) {
-            for (let iz = 0; iz < config.terrainSize; iz++) {
-                const worldX = ix - HALF_SIZE;
-                const worldZ = iz - HALF_SIZE;
-
-                const noiseVal = fbmNoise(worldX * 0.12, worldZ * 0.12, seed, 7);
-                const rawHeight = noiseVal * 9 * config.heightMultiplier + 7;
-                const height = Math.max(1, Math.min(25, Math.round(rawHeight)));
-
-                const moisture = moistureNoise(worldX, worldZ, seed);
-                const moistNorm = (moisture + 1) / 2;
-
-                let surfaceType;
-                if (height <= WATER_LEVEL + 1) {
-                    surfaceType = BlockTypes.SAND;
-                } else if (height >= SNOW_LINE) {
-                    surfaceType = BlockTypes.SNOW;
-                } else if (height >= STONE_LINE) {
-                    surfaceType = BlockTypes.STONE;
-                } else if (moistNorm < 0.15) {
-                    surfaceType = BlockTypes.SAND;
-                } else {
-                    surfaceType = BlockTypes.GRASS;
+                map.get(BlockTypes.BEDROCK).push({x:wx,y:0,z:wz});
+                const stoneTop = Math.max(1, h-4);
+                for(let y=1; y<stoneTop; y++) {
+                    const rng = mulberry32(seed+wx*1000+wz*100+y*10);
+                    const rc = rng();
+                    if(rc<0.06) map.get(BlockTypes.COAL_ORE).push({x:wx,y,z:wz});
+                    else if(rc<0.09) map.get(BlockTypes.IRON_ORE).push({x:wx,y,z:wz});
+                    else map.get(BlockTypes.STONE).push({x:wx,y,z:wz});
                 }
-
-                blockMap.get(BlockTypes.BEDROCK).push({ x: worldX, y: 0, z: worldZ });
-
-                const stoneTop = Math.max(1, height - 4);
-                for (let y = 1; y < stoneTop; y++) {
-                    const oreRng = mulberry32(seed + worldX * 1000 + worldZ * 100 + y * 10);
-                    const oreChance = oreRng();
-                    const depth = stoneTop - y;
-                    
-                    let blockType = BlockTypes.STONE;
-                    // 深层才有金矿和钻石
-                    if (depth > 6) {
-                        if (oreChance < 0.03 * config.oreDensity) blockType = BlockTypes.GOLD_ORE;
-                        else if (oreChance < 0.05 * config.oreDensity) blockType = BlockTypes.DIAMOND_ORE;
-                        else if (oreChance < 0.09 * config.oreDensity) blockType = BlockTypes.COAL_ORE;
-                        else if (oreChance < 0.14 * config.oreDensity) blockType = BlockTypes.IRON_ORE;
-                    } else {
-                        if (oreChance < 0.08 * config.oreDensity) blockType = BlockTypes.COAL_ORE;
-                        else if (oreChance < 0.12 * config.oreDensity) blockType = BlockTypes.IRON_ORE;
-                    }
-                    blockMap.get(blockType).push({ x: worldX, y, z: worldZ });
-                }
-
-                for (let y = stoneTop; y < height; y++) {
-                    blockMap.get(BlockTypes.DIRT).push({ x: worldX, y, z: worldZ });
-                }
-
-                blockMap.get(surfaceType).push({ x: worldX, y: height, z: worldZ });
-
-                if (height < WATER_LEVEL) {
-                    blockMap.get(BlockTypes.WATER).push({ x: worldX, y: WATER_LEVEL, z: worldZ });
-                }
-
-                surfaceInfo.push({ x: worldX, z: worldZ, height, surfaceType, moisture: moistNorm });
+                for(let y=stoneTop; y<h; y++) map.get(BlockTypes.DIRT).push({x:wx,y,z:wz});
+                map.get(surface).push({x:wx,y:h,z:wz});
+                if(h<WATER_LV) map.get(BlockTypes.WATER).push({x:wx,y:WATER_LV,z:wz});
+                info.push({x:wx,z:wz,height:h,surface,moisture:m});
             }
         }
-        return { blockMap, surfaceInfo };
+        return {map, info};
     }
 
-    // 改进的树木生成（多种树型）
-    function placeTrees(blockMap, surfaceInfo, seed) {
-        const rng = mulberry32(seed + 77777);
-        for (const info of surfaceInfo) {
-            const { x, z, height, surfaceType, moisture } = info;
-            if (surfaceType !== BlockTypes.GRASS) continue;
-            if (height < config.waterLevel + 2) continue;
-            if (moisture < 0.2) continue;
-
-            const density = 0.18 * config.treeDensity;
-            if (rng() > density) continue;
-
-            const treeType = rng() < 0.7 ? 'normal' : 'sparse';
-            const trunkHeight = treeType === 'normal' 
-                ? 3 + Math.floor(rng() * 4)
-                : 2 + Math.floor(rng() * 3);
-            const trunkBase = height + 1;
-            const trunkTop = height + trunkHeight;
-
-            for (let ty = trunkBase; ty <= trunkTop; ty++) {
-                blockMap.get(BlockTypes.WOOD).push({ x, y: ty, z });
+    function placeTrees(map, info, seed) {
+        const rng = mulberry32(seed+77777);
+        for(const t of info) {
+            if(t.surface!==BlockTypes.GRASS||t.height<WATER_LV+2||t.moisture<0.15||rng()>0.18) continue;
+            const trunkH = 2+Math.floor(rng()*4);
+            for(let y=t.height+1; y<=t.height+trunkH; y++) map.get(BlockTypes.WOOD).push({x:t.x,y,z:t.z});
+            const cb = t.height+trunkH;
+            for(let dx=-1;dx<=1;dx++) for(let dz=-1;dz<=1;dz++) if(dx||dz) map.get(BlockTypes.LEAVES).push({x:t.x+dx,y:cb,z:t.z+dz});
+            const ct = cb+1;
+            for(let dx=-1;dx<=1;dx++) for(let dz=-1;dz<=1;dz++) {
+                if(Math.abs(dx)===1&&Math.abs(dz)===1&&rng()>0.5) continue;
+                map.get(BlockTypes.LEAVES).push({x:t.x+dx,y:ct,z:t.z+dz});
             }
-
-            const crownBase = trunkTop;
-            const crownRadius = treeType === 'normal' ? 1 : 0;
-
-            for (let dx = -1 - crownRadius; dx <= 1 + crownRadius; dx++) {
-                for (let dz = -1 - crownRadius; dz <= 1 + crownRadius; dz++) {
-                    if (dx === 0 && dz === 0) continue;
-                    if (crownRadius > 0 && Math.abs(dx) > 1 && Math.abs(dz) > 1 && rng() > 0.4) continue;
-                    blockMap.get(BlockTypes.LEAVES).push({ x: x + dx, y: crownBase, z: z + dz });
-                }
-            }
-
-            const crownTop = crownBase + 1;
-            for (let dx = -1; dx <= 1; dx++) {
-                for (let dz = -1; dz <= 1; dz++) {
-                    if (Math.abs(dx) === 1 && Math.abs(dz) === 1 && rng() > 0.5) continue;
-                    blockMap.get(BlockTypes.LEAVES).push({ x: x + dx, y: crownTop, z: z + dz });
-                }
-            }
-
-            if (rng() > 0.3) {
-                blockMap.get(BlockTypes.LEAVES).push({ x, y: crownTop + 1, z });
+            if(rng()>0.4) {
+                map.get(BlockTypes.LEAVES).push({x:t.x,y:ct+1,z:t.z});
+                if(rng()>0.5) map.get(BlockTypes.LEAVES).push({x:t.x+1,y:ct+1,z:t.z});
+                if(rng()>0.5) map.get(BlockTypes.LEAVES).push({x:t.x-1,y:ct+1,z:t.z});
             }
         }
     }
 
-    // 灌木生成
-    function placeShrubs(blockMap, surfaceInfo, seed) {
-        const rng = mulberry32(seed + 55555);
-        for (const info of surfaceInfo) {
-            const { x, z, height, surfaceType } = info;
-            if (surfaceType !== BlockTypes.GRASS) continue;
-            if (height < config.waterLevel + 1) continue;
-            if (rng() > 0.05 * config.treeDensity) continue;
-
-            blockMap.get(BlockTypes.SHRUB).push({ x, y: height + 1, z });
-            if (rng() > 0.5) {
-                const dx = rng() > 0.5 ? 1 : -1;
-                blockMap.get(BlockTypes.SHRUB).push({ x: x + dx, y: height + 1, z });
-            }
+    function placeFlowers(map, info, seed) {
+        const rng = mulberry32(seed+99999);
+        const colors = ['#cc4444','#ccaa22','#cc6622','#cc4477','#bb66cc','#ffffff','#44aa44','#5599cc'];
+        for(const t of info) {
+            if(t.surface!==BlockTypes.GRASS||t.height<WATER_LV+1||rng()>0.08) continue;
+            map.get(BlockTypes.FLOWER).push({x:t.x, y:t.height+1, z:t.z, color:colors[Math.floor(rng()*colors.length)]});
         }
     }
 
-    // 花朵生成（更多样）
-    function placeFlowers(blockMap, surfaceInfo, seed) {
-        const rng = mulberry32(seed + 99999);
-        const flowerColors = [
-            new THREE.Color('#ff6b6b'), new THREE.Color('#ffd93d'), new THREE.Color('#ff922b'),
-            new THREE.Color('#f06595'), new THREE.Color('#e599f7'), new THREE.Color('#ffffff'),
-            new THREE.Color('#51cf66'), new THREE.Color('#74c0fc'), new THREE.Color('#ff8787'),
-        ];
-        const density = 0.08 * config.flowerDensity;
-        for (const info of surfaceInfo) {
-            const { x, z, height, surfaceType } = info;
-            if (surfaceType !== BlockTypes.GRASS) continue;
-            if (height < config.waterLevel + 1) continue;
-            if (rng() > density) continue;
-
-            const color = flowerColors[Math.floor(rng() * flowerColors.length)];
-            blockMap.get(BlockTypes.FLOWER).push({ x, y: height + 1, z, color });
-        }
-    }
-
-    // 装饰物（小碎片）
-    function placeDebris(blockMap, surfaceInfo, seed) {
-        const rng = mulberry32(seed + 33333);
-        for (const info of surfaceInfo) {
-            const { x, z, height, surfaceType } = info;
-            if (rng() > 0.03) continue;
-            if (height < config.waterLevel + 1) continue;
-
-            const debrisCount = 1 + Math.floor(rng() * 3);
-            for (let i = 0; i < debrisCount; i++) {
-                const dx = Math.floor(rng() * 3) - 1;
-                const dz = Math.floor(rng() * 3) - 1;
-                blockMap.get(BlockTypes.DEBRIS).push({ x: x + dx, y: height + 1, z: z + dz });
-            }
-        }
-    }
-
-    // 云生成（更丰富）
-    function placeClouds(blockMap, seed) {
-        const cloudRng = mulberry32(seed + 12345);
-        const cloudY = 22;
-        const cloudExtent = config.terrainSize / 2 + 15;
-        const clouds = [];
-
-        for (let ix = -cloudExtent; ix <= cloudExtent; ix++) {
-            for (let iz = -cloudExtent; iz <= cloudExtent; iz++) {
-                const noiseVal = fbmNoise(ix * 0.35, iz * 0.35, seed + 88888, 4);
-                if (noiseVal > 0.5 && cloudRng() < (noiseVal - 0.5) * 1.2) {
-                    clouds.push({ x: ix, y: cloudY, z: iz });
-                    if (cloudRng() < 0.4 && noiseVal > 0.65) {
-                        clouds.push({ x: ix, y: cloudY + 1, z: iz });
-                    }
-                }
-            }
-        }
-
-        for (const cloud of clouds) {
-            blockMap.get(BlockTypes.CLOUD).push(cloud);
-        }
-    }
-
-    // 创建 InstancedMesh
-    function createInstancedMeshes(blockMap) {
+    function buildMeshes(blockMap) {
         const meshes = [];
-        for (const [type, blocks] of blockMap) {
-            if (blocks.length === 0) continue;
-            const colorHex = blockColors[type];
-            const preset = blockMaterialPresets[type] || {};
-            let material;
-
-            if (type === BlockTypes.WATER) {
-                material = new THREE.MeshStandardMaterial({
-                    color: new THREE.Color(colorHex), roughness: 0.2, metalness: 0.1,
-                    transparent: true, opacity: 0.7, depthWrite: true,
-                });
-            } else if (type === BlockTypes.CLOUD) {
-                material = new THREE.MeshStandardMaterial({
-                    color: new THREE.Color(colorHex), roughness: 0.3, metalness: 0.0,
-                    transparent: true, opacity: 0.82, depthWrite: true,
-                });
-            } else if (type === BlockTypes.FLOWER || type === BlockTypes.DEBRIS) {
-                material = new THREE.MeshStandardMaterial({ 
-                    color: new THREE.Color('#ffffff'), 
-                    roughness: 0.6,
-                    vertexColors: true,
-                });
-            } else {
-                material = new THREE.MeshStandardMaterial({
-                    color: new THREE.Color(colorHex),
-                    roughness: preset.roughness ?? 0.7,
-                    metalness: preset.metalness ?? 0.0,
-                });
-            }
-
-            const instancedMesh = new THREE.InstancedMesh(sharedGeometry, material, blocks.length);
-            instancedMesh.castShadow = true;
-            instancedMesh.receiveShadow = true;
-            if (type === BlockTypes.WATER || type === BlockTypes.CLOUD) instancedMesh.renderOrder = 1;
-
+        for(const [type, blocks] of blockMap) {
+            if(!blocks.length) continue;
+            let mat;
+            if(type===BlockTypes.FLOWER) mat = getMaterial(type, blocks[0].color);
+            else mat = getMaterial(type);
+            const inst = new THREE.InstancedMesh(geo, mat, blocks.length);
+            inst.castShadow = true;
+            inst.receiveShadow = true;
             const dummy = new THREE.Object3D();
-            for (let i = 0; i < blocks.length; i++) {
-                const b = blocks[i];
-                dummy.position.set(b.x, b.y, b.z);
-                dummy.scale.set(1, 1, 1);
+            for(let i=0; i<blocks.length; i++) {
+                dummy.position.set(blocks[i].x, blocks[i].y, blocks[i].z);
                 dummy.updateMatrix();
-                instancedMesh.setMatrixAt(i, dummy.matrix);
-                if ((type === BlockTypes.FLOWER || type === BlockTypes.DEBRIS) && b.color) {
-                    instancedMesh.setColorAt(i, b.color);
-                }
+                inst.setMatrixAt(i, dummy.matrix);
             }
-            instancedMesh.instanceMatrix.needsUpdate = true;
-            if ((type === BlockTypes.FLOWER || type === BlockTypes.DEBRIS) && blocks.length > 0) {
-                instancedMesh.instanceColor.needsUpdate = true;
-            }
-            meshes.push(instancedMesh);
+            inst.instanceMatrix.needsUpdate = true;
+            meshes.push(inst);
         }
         return meshes;
     }
 
-    function clearTerrain() {
-        for (const mesh of terrainMeshes) {
-            if (mesh.geometry && mesh.geometry !== sharedGeometry) mesh.geometry.dispose();
-            if (mesh.material) mesh.material.dispose();
-            scene.remove(mesh);
+    function clear() {
+        for(const m of terrainMeshes) {
+            if(m.geometry && m.geometry!==geo) m.geometry.dispose();
+            if(m.material) {
+                if(Array.isArray(m.material)) m.material.forEach(x=>x.dispose());
+                else m.material.dispose();
+            }
+            scene.remove(m);
         }
         terrainMeshes = [];
     }
 
-    function generateTerrain(seed) {
-        clearTerrain();
-        const { blockMap, surfaceInfo } = collectBlocks(seed);
-        placeTrees(blockMap, surfaceInfo, seed);
-        placeShrubs(blockMap, surfaceInfo, seed);
-        placeFlowers(blockMap, surfaceInfo, seed);
-        placeDebris(blockMap, surfaceInfo, seed);
-        placeClouds(blockMap, seed);
-        terrainMeshes = createInstancedMeshes(blockMap);
-        
-        for (const mesh of terrainMeshes) scene.add(mesh);
+    function generate(seed) {
+        clear();
+        const {map, info} = collectBlocks(seed);
+        placeTrees(map, info, seed);
+        placeFlowers(map, info, seed);
+        terrainMeshes = buildMeshes(map);
+        terrainMeshes.forEach(m=>scene.add(m));
         seedText.textContent = seed;
-
-        let totalBlocks = 0;
-        const stats = {};
-        for (const [type, blocks] of blockMap) {
-            totalBlocks += blocks.length;
-            stats[type] = blocks.length;
-        }
-
-        statsDiv.innerHTML = `
-            <span>🧱 总方块: ${totalBlocks}</span>
-            <span>🌳 树木: ${stats[BlockTypes.LEAVES]?.length || 0}</span>
-            <span>💎 矿物: ${(stats[BlockTypes.COAL_ORE]?.length || 0) + (stats[BlockTypes.IRON_ORE]?.length || 0) + (stats[BlockTypes.GOLD_ORE]?.length || 0) + (stats[BlockTypes.DIAMOND_ORE]?.length || 0)}</span>
-        `;
-
-        console.log(`🌍 种子 ${seed} | 地形大小: ${config.terrainSize}×${config.terrainSize} | 总方块: ${totalBlocks}`);
+        console.log(`🌿 不透明纹理地形 种子:${seed}`);
     }
 
-    let currentSeed = Math.floor(Math.random() * 1000000);
-    generateTerrain(currentSeed);
+    let seed = Math.floor(Math.random()*1000000);
+    generate(seed);
 
     function animate() {
         requestAnimationFrame(animate);
         controls.update();
-        const time = performance.now() * 0.0001;
-        sunLight.position.x = 40 + Math.sin(time * 0.3) * 15;
-        sunLight.position.z = 30 + Math.cos(time * 0.3) * 15;
         renderer.render(scene, camera);
     }
     animate();
 
-    window.addEventListener('resize', () => {
-        camera.aspect = container.clientWidth / container.clientHeight;
+    window.addEventListener('resize', ()=>{
+        camera.aspect = container.clientWidth/container.clientHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(container.clientWidth, container.clientHeight);
     });
 
-    btnRegen.addEventListener('click', () => { generateTerrain(currentSeed); });
-    btnRandom.addEventListener('click', () => {
-        currentSeed = Math.floor(Math.random() * 1000000);
-        generateTerrain(currentSeed);
+    btnRegen.addEventListener('click', ()=>generate(seed));
+    btnRandom.addEventListener('click', ()=>{
+        seed = Math.floor(Math.random()*1000000);
+        generate(seed);
     });
-    btnReset.addEventListener('click', () => {
-        const startPos = camera.position.clone();
-        const startTarget = controls.target.clone();
-        const targetPos = new THREE.Vector3(50, 30, 50);
-        const targetLook = new THREE.Vector3(0, 8, 0);
-        const startTime = performance.now();
-        function anim(now) {
-            const t = Math.min((now - startTime) / 800, 1);
-            const ease = t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2;
-            camera.position.lerpVectors(startPos, targetPos, ease);
-            controls.target.lerpVectors(startTarget, targetLook, ease);
+    btnReset.addEventListener('click', ()=>{
+        const sP = camera.position.clone();
+        const sT = controls.target.clone();
+        const tP = new THREE.Vector3(30,20,30);
+        const tL = new THREE.Vector3(0,6,0);
+        const t0 = performance.now();
+        function anim(now){
+            const t = Math.min((now-t0)/800,1);
+            const e = t<0.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+            camera.position.lerpVectors(sP,tP,e);
+            controls.target.lerpVectors(sT,tL,e);
             controls.update();
-            if (t < 1) requestAnimationFrame(anim);
+            if(t<1) requestAnimationFrame(anim);
         }
         requestAnimationFrame(anim);
         controls.autoRotate = true;
     });
-
-    window.addEventListener('keydown', (e) => {
-        if (e.key.toLowerCase() === 'r') {
-            currentSeed = Math.floor(Math.random() * 1000000);
-            generateTerrain(currentSeed);
-        } else if (e.key.toLowerCase() === 'g') {
-            generateTerrain(currentSeed);
-        } else if (e.key.toLowerCase() === 'f') {
-            controls.target.set(0, 8, 0);
-            camera.position.set(50, 30, 50);
-            controls.update();
-        } else if (e.key.toLowerCase() === 'a') {
-            controls.autoRotate = !controls.autoRotate;
-        } else if (e.key.toLowerCase() === 's') {
-            settingsPanel.classList.add('active');
-        }
+    window.addEventListener('keydown', e=>{
+        if(e.key==='r') { seed=Math.floor(Math.random()*1000000); generate(seed); }
+        else if(e.key==='g') generate(seed);
+        else if(e.key==='f') { controls.target.set(0,6,0); camera.position.set(30,20,30); controls.update(); }
+        else if(e.key==='a') controls.autoRotate = !controls.autoRotate;
     });
-
-    console.log('✅ 增强版地形生成器已加载！包含：草地、树木、灌木、花朵、矿物、装饰物等');
 </script>
 </body>
 </html>
