@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 色块 · 揉捏面团解压玩具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #0b0c10;
+            color: #fff;
+            font-family: "Microsoft Yahei", system-ui, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+            gap: 1.5rem;
+        }
+        .nav {
+            margin-bottom: 1rem;
+        }
+        .nav a {
+            color: #66fcf1;
+            text-decoration: none;
+            font-size: 16px;
+            padding: 8px 16px;
+            border: 1px solid #66fcf1;
+            border-radius: 6px;
+            transition: 0.2s;
+        }
+        .nav a:hover {
+            background: #66fcf1;
+            color: #000;
+        }
+        h1 {
+            color: #66fcf1;
+            font-size: clamp(1.5rem, 4vw, 2.2rem);
+            text-shadow: 0 0 8px rgba(102, 252, 241, 0.4);
+        }
+        .canvas-wrap {
+            position: relative;
+            user-select: none;
+        }
+        canvas {
+            border: 2px solid #45a29e;
+            border-radius: 12px;
+            background: #000;
+            box-shadow: 0 0 15px rgba(69, 162, 158, 0.3);
+            cursor: grab;
+            image-rendering: pixelated;
+        }
+        canvas:active {
+            cursor: grabbing;
+        }
+        button {
+            padding: 12px 28px;
+            font-size: 16px;
+            font-weight: 500;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #66fcf1;
+            color: #000;
+        }
+        button:hover {
+            background: #7ff3e9;
+            box-shadow: 0 0 10px rgba(102, 252, 241, 0.5);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .info {
+            color: #aaa;
+            font-size: 14px;
+            line-height: 1.6;
+            text-align: center;
+        }
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #66fcf1;
+            font-size: 18px;
+            text-shadow: 0 0 6px #000;
+            display: none;
+        }
+        .loading.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- 跳转链接 -->
+    <div class="nav">
+        <a href="terrain.html">前往 MC 3D 地形生成器 →</a>
+    </div>
+
+    <h1>AI 色块 · 揉捏面团解压玩具</h1>
+    <div class="canvas-wrap">
+        <canvas id="cv" width="400" height="400"></canvas>
+        <div class="loading">生成中...</div>
+    </div>
+    <button id="gen">重新生成图案</button>
+    <div class="info">按住拖动，强力拉伸 + 顺滑跟随，模拟软面团</div>
+
+    <script>
+        const canvas = document.getElementById('cv');
+        const ctx = canvas.getContext('2d');
+        const genBtn = document.getElementById('gen');
+        const loadingTip = document.querySelector('.loading');
+        const W = canvas.width, H = canvas.height;
+
+        let currentData = null;
+        let isDrag = false;
+        let dragX = 0, dragY = 0;
+        let lastX = 0, lastY = 0;
+
+        const RADIUS = 90;
+        const POWER = 0.6;
+        const FALLOFF = 2;
+        const SMOOTH_FACTOR = 0.9;
+
+        const matMul = (a, b) => {
+            const aRow = a.length, bCol = b[0].length, bRow = b.length;
+            const res = new Array(aRow);
+            for (let i = 0; i < aRow; i++) {
+                res[i] = new Array(bCol).fill(0);
+                const ra = a[i];
+                for (let k = 0; k < bRow; k++) {
+                    const va = ra[k], rb = b[k];
+                    for (let j = 0; j < bCol; j++) res[i][j] += va * rb[j];
+                }
+            }
+            return res;
+        };
+        const addBias = (m, b) => m.map(r => r.map((v, i) => v + b[i]));
+        const tanhAct = m => m.map(r => r.map(Math.tanh));
+        const randomMat = (r, c) => Array.from({length: r}, () => Array.from({length: c}, () => Math.random() * 2 - 1));
+        const randomVec = n => Array.from({length: n}, () => Math.random() * 2 - 1);
+
+        class RandomNN {
+            constructor(inS, h1, h2, outS) {
+                this.inSize = inS; this.hid1 = h1; this.hid2 = h2; this.outSize = outS;
+                this.resetWeights();
+            }
+            resetWeights() {
+                this.w1 = randomMat(this.inSize, this.hid1);
+                this.b1 = randomVec(this.hid1);
+                this.w2 = randomMat(this.hid1, this.hid2);
+                this.b2 = randomVec(this.hid2);
+                this.w3 = randomMat(this.hid2, this.outSize);
+                this.b3 = randomVec(this.outSize);
+            }
+            forward(x, y) {
+                let o = matMul([[x, y, 1]], this.w1);
+                o = addBias(o, this.b1); o = tanhAct(o);
+                o = matMul(o, this.w2);
+                o = addBias(o, this.b2); o = tanhAct(o);
+                o = matMul(o, this.w3);
+                o = addBias(o, this.b3); o = tanhAct(o)[0];
+                return [
+                    (o[0] + 1) * 127.5 | 0,
+                    (o[1] + 1) * 127.5 | 0,
+                    (o[2] + 1) * 127.5 | 0,
+                    (o[3] + 1) * 127.5 | 0
+                ];
+            }
+        }
+        const nn = new RandomNN(3, 16, 16, 4);
+
+        function generate() {
+            loadingTip.classList.add('show');
+            genBtn.disabled = true;
+            requestAnimationFrame(() => {
+                nn.resetWeights();
+                const imgData = ctx.createImageData(W, H);
+                const data = imgData.data;
+                for (let y = 0; y < H; y++) {
+                    const ny = (y / H) * 2 - 1;
+                    for (let x = 0; x < W; x++) {
+                        const nx = (x / W) * 2 - 1;
+                        const [r, g, b, a] = nn.forward(nx, ny);
+                        const idx = (y * W + x) * 4;
+                        data[idx] = r;
+                        data[idx + 1] = g;
+                        data[idx + 2] = b;
+                        data[idx + 3] = a;
+                    }
+                }
+                currentData = new Uint8ClampedArray(data);
+                ctx.putImageData(imgData, 0, 0);
+                loadingTip.classList.remove('show');
+                genBtn.disabled = false;
+            });
+        }
+
+        function distort(mx, my, dx, dy) {
+            const img = ctx.createImageData(W, H);
+            const out = img.data;
+            const src = currentData;
+            dx *= SMOOTH_FACTOR;
+            dy *= SMOOTH_FACTOR;
+
+            for (let y = 0; y < H; y++) {
+                for (let x = 0; x < W; x++) {
+                    const dist = Math.hypot(x - mx, y - my);
+                    let offX = 0, offY = 0;
+                    if (dist < RADIUS) {
+                        let rate = 1 - (dist / RADIUS) ** FALLOFF;
+                        let strength = rate * POWER;
+                        offX = dx * strength;
+                        offY = dy * strength;
+                    }
+                    let sx = x - offX;
+                    let sy = y - offY;
+                    sx = (sx + W) % W;
+                    sy = (sy + H) % H;
+                    const srcIdx = (Math.floor(sy) * W + Math.floor(sx)) * 4;
+                    const outIdx = (y * W + x) * 4;
+                    out[outIdx] = src[srcIdx];
+                    out[outIdx + 1] = src[srcIdx + 1];
+                    out[outIdx + 2] = src[srcIdx + 2];
+                    out[outIdx + 3] = src[srcIdx + 3];
+                }
+            }
+            currentData = new Uint8ClampedArray(out);
+            ctx.putImageData(img, 0, 0);
+        }
+
+        canvas.addEventListener('mousedown', e => {
+            isDrag = true;
+            const rect = canvas.getBoundingClientRect();
+            lastX = e.clientX - rect.left;
+            lastY = e.clientY - rect.top;
+        });
+        document.addEventListener('mousemove', e => {
+            if (!isDrag) return;
+            const rect = canvas.getBoundingClientRect();
+            dragX = e.clientX - rect.left;
+            dragY = e.clientY - rect.top;
+            const deltaX = dragX - lastX;
+            const deltaY = dragY - lastY;
+            distort(dragX, dragY, deltaX, deltaY);
+            lastX = dragX;
+            lastY = dragY;
+        });
+        document.addEventListener('mouseup', () => isDrag = false);
+        document.addEventListener('mouseleave', () => isDrag = false);
+
+        canvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            isDrag = true;
+            const rect = canvas.getBoundingClientRect();
+            const t = e.touches[0];
+            lastX = t.clientX - rect.left;
+            lastY = t.clientY - rect.top;
+        });
+        document.addEventListener('touchmove', e => {
+            if (!isDrag) return;
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const t = e.touches[0];
+            dragX = t.clientX - rect.left;
+            dragY = t.clientY - rect.top;
+            const deltaX = dragX - lastX;
+            const deltaY = dragY - lastY;
+            distort(dragX, dragY, deltaX, deltaY);
+            lastX = dragX;
+            lastY = dragY;
+        });
+        document.addEventListener('touchend', () => isDrag = false);
+        genBtn.addEventListener('click', generate);
+        generate();
+    </script>
+</body>
+</html>
